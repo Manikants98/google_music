@@ -44,7 +44,7 @@ Future<void> main() async {
       androidStopForegroundOnPause: false,
       androidNotificationClickStartsActivity: true,
       androidResumeOnClick: true,
-      androidNotificationIcon: 'drawable/ic_music_notification',
+      androidNotificationIcon: 'mipmap/ic_launcher',
       notificationColor: Color(0xFFFF4E4E),
     ),
   );

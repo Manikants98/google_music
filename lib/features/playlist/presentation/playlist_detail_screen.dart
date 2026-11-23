@@ -6,7 +6,6 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../core/widgets/track_tile.dart';
 import '../../../models/playlist_model.dart';
-import '../../../models/song_model.dart';
 
 /// Detailed view for a custom user playlist displaying tracks, playback actions, and management controls.
 class PlaylistDetailScreen extends StatelessWidget {
@@ -138,7 +137,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                             'Play All',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onPressed: () => controller.playPlaylist(playlist),
+                          onPressed: () => controller.playPlaylist(playlist, shuffle: false),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
@@ -160,11 +159,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                             'Shuffle',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onPressed: () {
-                            final shuffled = List<SongModel>.from(songs)
-                              ..shuffle();
-                            controller.playSong(shuffled.first, newQueue: shuffled);
-                          },
+                          onPressed: () => controller.playPlaylist(playlist, shuffle: true),
                         ),
                       ],
                     ),

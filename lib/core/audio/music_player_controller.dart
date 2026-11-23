@@ -1101,11 +1101,18 @@ class MusicPlayerController extends ChangeNotifier {
   Future<bool> removeSongFromPlaylist(String playlistId, String songId) =>
       playlistService.removeSongFromPlaylist(playlistId, songId);
 
-  /// Plays a full custom playlist starting from [startIndex].
-  void playPlaylist(PlaylistModel playlist, {int startIndex = 0}) {
+  /// Plays a full custom playlist starting from [startIndex], with optional shuffle mode.
+  void playPlaylist(PlaylistModel playlist, {int startIndex = 0, bool shuffle = false}) {
     if (playlist.songs.isEmpty) return;
-    final targetIndex = startIndex.clamp(0, playlist.songs.length - 1);
-    playSong(playlist.songs[targetIndex], newQueue: playlist.songs);
+    if (shuffle) {
+      final shuffled = List<SongModel>.from(playlist.songs)..shuffle();
+      _isShuffle = true;
+      playSong(shuffled.first, newQueue: shuffled);
+    } else {
+      _isShuffle = false;
+      final targetIndex = startIndex.clamp(0, playlist.songs.length - 1);
+      playSong(playlist.songs[targetIndex], newQueue: playlist.songs);
+    }
   }
 
   /// Loads persisted liked songs from disk into memory.
