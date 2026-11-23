@@ -235,30 +235,27 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   widget.updateInfo.title,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Container(
-                  constraints: const BoxConstraints(maxHeight: 180),
+                  constraints: const BoxConstraints(maxHeight: 200),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SingleChildScrollView(
-                    child: Text(
-                      widget.updateInfo.changelog.isNotEmpty
-                          ? widget.updateInfo.changelog
-                          : 'Bug fixes and performance enhancements.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
+                    child: _buildChangelogContent(
+                      rawChangelog: widget.updateInfo.changelog,
+                      theme: theme,
+                      colorScheme: colorScheme,
+                      accent: accent,
                     ),
                   ),
                 ),
@@ -299,5 +296,144 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
         ],
       ),
     );
+  }
+
+  /// Formats raw markdown changelog into styled headings and bullet points.
+  Widget _buildChangelogContent({
+    required String rawChangelog,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required Color accent,
+  }) {
+    if (rawChangelog.trim().isEmpty) {
+      return Text(
+        'Bug fixes and performance enhancements.',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          height: 1.4,
+        ),
+      );
+    }
+
+    final lines = rawChangelog.split(RegExp(r'\r?\n'));
+    final widgets = <Widget>[];
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        widgets.add(const SizedBox(height: 6));
+        continue;
+      }
+
+      /// Check for heading (#, ##, ###)
+      final headerMatch = RegExp(r'^(#{1,6})\s*(.*)$').firstMatch(trimmed);
+      if (headerMatch != null) {
+        final headingText = headerMatch.group(2) ?? '';
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.only(
+              top: widgets.isNotEmpty ? 10 : 0,
+              bottom: 4,
+            ),
+            child: Text(
+              headingText,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+                fontSize: 13,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      /// Check for bullet points (-, *, +, •)
+      final bulletMatch = RegExp(r'^[-*+•]\s*(.*)$').firstMatch(trimmed);
+      if (bulletMatch != null) {
+        final bulletText = bulletMatch.group(1) ?? '';
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.only(top: 6, right: 8),
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: _parseInlineFormatting(
+                        bulletText,
+                        colorScheme,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        continue;
+      }
+
+      /// Regular paragraph text
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: RichText(
+            text: TextSpan(
+              children: _parseInlineFormatting(
+                trimmed,
+                colorScheme,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: widgets,
+    );
+  }
+
+  /// Parses inline bold syntax (**text**) into stylized TextSpan items.
+  List<TextSpan> _parseInlineFormatting(
+    String text,
+    ColorScheme colorScheme,
+  ) {
+    final spans = <TextSpan>[];
+    final parts = text.split('**');
+
+    for (int i = 0; i < parts.length; i++) {
+      final part = parts[i];
+      if (part.isEmpty) continue;
+
+      final isBold = i.isOdd;
+      spans.add(
+        TextSpan(
+          text: part,
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.45,
+            color: isBold ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
+      );
+    }
+
+    return spans;
   }
 }
