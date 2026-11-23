@@ -140,9 +140,9 @@ class MainActivity : AudioServiceActivity() {
                             @Suppress("DEPRECATION")
                             packageManager.getPackageInfo(packageName, 0)
                         }
-                        result.success(pInfo.versionName ?: "1.0.1")
+                        result.success(pInfo.versionName ?: "1.0.2")
                     } catch (e: Exception) {
-                        result.success("1.0.1")
+                        result.success("1.0.2")
                     }
                 }
                 "installApk" -> {
