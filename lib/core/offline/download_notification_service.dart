@@ -60,6 +60,19 @@ class DownloadNotificationService {
     });
   }
 
+  /// Opens an external web URL using the system browser via platform channel.
+  static Future<bool> openUrl(String url) async {
+    try {
+      final success = await _channel.invokeMethod<bool>('openUrl', <String, Object>{
+        'url': url,
+      });
+      return success ?? false;
+    } catch (e) {
+      debugPrint('[DownloadNotificationService] Failed to open URL: $e');
+      return false;
+    }
+  }
+
   /// Displays or updates a dedicated native download notification with progress bar and percentage.
   static Future<void> showProgress({
     required String id,

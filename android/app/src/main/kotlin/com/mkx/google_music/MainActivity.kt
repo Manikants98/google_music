@@ -169,6 +169,22 @@ class MainActivity : AudioServiceActivity() {
                         result.error("INVALID_PATH", "File path is null", null)
                     }
                 }
+                "openUrl" -> {
+                    val url = call.argument<String>("url")
+                    if (url != null) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("URL_FAILED", "Could not open URL: ${e.message}", null)
+                        }
+                    } else {
+                        result.error("INVALID_URL", "URL string is null", null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
