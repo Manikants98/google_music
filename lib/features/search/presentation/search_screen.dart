@@ -128,7 +128,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final m3eTheme = M3ETheme.of(context);
     final theme = Theme.of(context);
     final colorScheme = m3eTheme.colorScheme;
-    final controller = context.watch<MusicPlayerController>();
+    final recentHistory = context.select<MusicPlayerController, List<SongModel>>(
+      (c) => c.history,
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -352,7 +354,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             }, childCount: _languages.length),
                           ),
                         ),
-                        if (controller.history.isNotEmpty) ...<Widget>[
+                        if (recentHistory.isNotEmpty) ...<Widget>[
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
@@ -377,20 +379,20 @@ class _SearchScreenState extends State<SearchScreen> {
                                 outerRadius: 12,
                                 innerRadius: 4,
                                 gap: 2,
-                                itemCount: controller.history.length.clamp(
+                                itemCount: recentHistory.length.clamp(
                                   0,
                                   5,
                                 ),
                                 onTap: (int index) {
                                   M3ESongTile.handleTap(
                                     context,
-                                    controller.history[index],
-                                    queue: controller.history,
+                                    recentHistory[index],
+                                    queue: recentHistory,
                                   );
                                 },
                                 itemBuilder: (BuildContext context, int index) {
                                   return M3ESongTile(
-                                    song: controller.history[index],
+                                    song: recentHistory[index],
                                   );
                                 },
                               ),

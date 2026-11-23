@@ -77,12 +77,6 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     final colorScheme = theme.colorScheme;
     final accent = controller.dynamicAccentColor;
 
-    final progress = controller.duration.inMilliseconds > 0
-        ? (controller.position.inMilliseconds /
-                  controller.duration.inMilliseconds)
-              .clamp(0.0, 1.0)
-        : 0.0;
-
     final double contentOpacity =
         (1.0 - (_dragX.abs() / 140.0)).clamp(0.4, 1.0);
 
@@ -225,11 +219,20 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 2,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  child: ValueListenableBuilder<Duration>(
+                    valueListenable: controller.positionNotifier,
+                    builder: (context, pos, child) {
+                      final dur = controller.duration;
+                      final progress = dur.inMilliseconds > 0
+                          ? (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0)
+                          : 0.0;
+                      return LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 2,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(accent),
+                      );
+                    },
                   ),
                 ),
               ],

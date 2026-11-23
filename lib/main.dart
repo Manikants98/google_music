@@ -77,25 +77,29 @@ class GoogleMusicApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MusicPlayerController>.value(
       value: controller,
-      child: Consumer<MusicPlayerController>(
-        builder: (context, music, child) {
+      child: Selector<MusicPlayerController, ({ThemeMode mode, Color accent})>(
+        selector: (_, music) => (
+          mode: music.themeMode,
+          accent: music.dynamicAccentColor,
+        ),
+        builder: (context, themeProps, child) {
           final font = GoogleFonts.plusJakartaSans().fontFamily;
 
           /// Dynamically seed dark color scheme from active song's artwork accent color.
           final ColorScheme baseDarkScheme = ColorScheme.fromSeed(
-            seedColor: music.dynamicAccentColor,
+            seedColor: themeProps.accent,
             brightness: Brightness.dark,
           );
 
           final Color dynamicDarkSurface = Color.alphaBlend(
-            music.dynamicAccentColor.withValues(alpha: 0.04),
+            themeProps.accent.withValues(alpha: 0.04),
             const Color(0xFF0F0F13),
           );
 
           final Color dynamicDarkCard = baseDarkScheme.surfaceContainerHighest;
 
           final ColorScheme unifiedDarkScheme = baseDarkScheme.copyWith(
-            primary: music.dynamicAccentColor,
+            primary: themeProps.accent,
             surface: dynamicDarkSurface,
             surfaceContainerHighest: dynamicDarkCard,
           );
@@ -128,22 +132,22 @@ class GoogleMusicApp extends StatelessWidget {
 
           /// Google Light Mode Color Grading: Soft Google Snow surface subtly tinted by song palette.
           final ColorScheme baseLightScheme = ColorScheme.fromSeed(
-            seedColor: music.dynamicAccentColor,
+            seedColor: themeProps.accent,
             brightness: Brightness.light,
           );
 
           final Color dynamicLightSurface = Color.alphaBlend(
-            music.dynamicAccentColor.withValues(alpha: 0.04),
+            themeProps.accent.withValues(alpha: 0.04),
             const Color(0xFFF9F9FC),
           );
 
           final Color dynamicLightCard = Color.alphaBlend(
-            music.dynamicAccentColor.withValues(alpha: 0.06),
+            themeProps.accent.withValues(alpha: 0.06),
             const Color(0xFFECEEF4),
           );
 
           final ColorScheme unifiedLightScheme = baseLightScheme.copyWith(
-            primary: music.dynamicAccentColor,
+            primary: themeProps.accent,
             surface: dynamicLightSurface,
             surfaceContainerLowest: const Color(0xFFFFFFFF),
             surfaceContainerLow: const Color(0xFFF4F5F9),
@@ -181,16 +185,16 @@ class GoogleMusicApp extends StatelessWidget {
           );
 
           final isDark =
-              music.themeMode == ThemeMode.dark ||
-              (music.themeMode == ThemeMode.system &&
+              themeProps.mode == ThemeMode.dark ||
+              (themeProps.mode == ThemeMode.system &&
                   MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
           final M3EColorScheme m3eColorScheme =
               M3EColorScheme.fromSeed(
-                music.dynamicAccentColor,
+                themeProps.accent,
                 brightness: isDark ? Brightness.dark : Brightness.light,
               ).copyWith(
-                primary: music.dynamicAccentColor,
+                primary: themeProps.accent,
                 surface: isDark ? dynamicDarkSurface : dynamicLightSurface,
                 surfaceContainerHighest: isDark
                     ? dynamicDarkCard
@@ -204,7 +208,7 @@ class GoogleMusicApp extends StatelessWidget {
             navigatorKey: rootNavigatorKey,
             title: 'Google Music',
             debugShowCheckedModeBanner: false,
-            themeMode: music.themeMode,
+            themeMode: themeProps.mode,
             theme: lightTheme,
             darkTheme: darkTheme,
             builder: (context, appChild) {
@@ -235,6 +239,21 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedTab = 0;
   final ScrollController _homeScrollController = ScrollController();
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = <Widget>[
+      HomeScreen(
+        scrollController: _homeScrollController,
+        onSearchTapped: () => _onTabSelected(1),
+      ),
+      const SearchScreen(),
+      LibraryScreen(onSearchTapped: () => _onTabSelected(1)),
+      const SettingsScreen(),
+    ];
+  }
 
   @override
   void dispose() {
@@ -263,25 +282,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final theme = M3ETheme.of(context);
-    final controller = context.watch<MusicPlayerController>();
-
-    final screens = <Widget>[
-      HomeScreen(
-        scrollController: _homeScrollController,
-        onSearchTapped: () => _onTabSelected(1),
-      ),
-      const SearchScreen(),
-      LibraryScreen(onSearchTapped: () => _onTabSelected(1)),
-      const SettingsScreen(),
-    ];
+    final hasActiveSong = context.select<MusicPlayerController, bool>(
+      (c) => c.currentSong != null,
+    );
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: IndexedStack(index: _selectedTab, children: screens),
+      body: IndexedStack(index: _selectedTab, children: _screens),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (controller.currentSong != null) const MiniPlayerPill(),
+          if (hasActiveSong) const MiniPlayerPill(),
           M3ENavigationBar(
             selectedIndex: _selectedTab,
             onDestinationSelected: _onTabSelected,

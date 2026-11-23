@@ -71,14 +71,23 @@ class M3ESongTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<MusicPlayerController>();
-    final isCurrent = controller.currentSong?.id == song.id;
-    final isPlaying = isCurrent && controller.isPlaying;
+    final isCurrent = context.select<MusicPlayerController, bool>(
+      (c) => c.currentSong?.id == song.id,
+    );
+    final isPlaying = isCurrent &&
+        context.select<MusicPlayerController, bool>(
+          (c) => c.isPlaying,
+        );
+    final isDownloaded = context.select<MusicPlayerController, bool>(
+      (c) => c.isSongDownloaded(song.id),
+    );
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final activeAccent = controller.getLegibleAccentColor(isDark);
+    final activeAccent = context.select<MusicPlayerController, Color>(
+      (c) => c.getLegibleAccentColor(isDark),
+    );
 
     final effectiveSubtitle =
         subtitle ??
@@ -137,7 +146,7 @@ class M3ESongTile extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    if (controller.isSongDownloaded(song.id)) ...<Widget>[
+                    if (isDownloaded) ...<Widget>[
                       Icon(
                         Icons.download_done_rounded,
                         size: 12,

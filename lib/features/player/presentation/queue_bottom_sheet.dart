@@ -581,37 +581,39 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
 
         /// If synchronized lyrics are available, render interactive karaoke list.
         if (lyrics.hasSyncedLyrics) {
-          final position = controller.position;
-          int activeIndex = -1;
-          for (int i = 0; i < lyrics.syncedLines.length; i++) {
-            if (lyrics.syncedLines[i].timestamp <= position) {
-              activeIndex = i;
-            } else {
-              break;
-            }
-          }
-
-          if (!_userIsScrollingLyrics &&
-              activeIndex != _lastSyncedIndex &&
-              activeIndex >= 0) {
-            _lastSyncedIndex = activeIndex;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_lyricsScrollController.hasClients) {
-                final targetOffset = (activeIndex * 58.0) - 160.0;
-                final clamped = targetOffset.clamp(
-                  0.0,
-                  _lyricsScrollController.position.maxScrollExtent,
-                );
-                _lyricsScrollController.animateTo(
-                  clamped,
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOutCubic,
-                );
+          return ValueListenableBuilder<Duration>(
+            valueListenable: controller.positionNotifier,
+            builder: (context, position, child) {
+              int activeIndex = -1;
+              for (int i = 0; i < lyrics.syncedLines.length; i++) {
+                if (lyrics.syncedLines[i].timestamp <= position) {
+                  activeIndex = i;
+                } else {
+                  break;
+                }
               }
-            });
-          }
 
-          return Stack(
+              if (!_userIsScrollingLyrics &&
+                  activeIndex != _lastSyncedIndex &&
+                  activeIndex >= 0) {
+                _lastSyncedIndex = activeIndex;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_lyricsScrollController.hasClients) {
+                    final targetOffset = (activeIndex * 58.0) - 160.0;
+                    final clamped = targetOffset.clamp(
+                      0.0,
+                      _lyricsScrollController.position.maxScrollExtent,
+                    );
+                    _lyricsScrollController.animateTo(
+                      clamped,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeOutCubic,
+                    );
+                  }
+                });
+              }
+
+              return Stack(
             children: <Widget>[
               NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
@@ -743,7 +745,9 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                 ),
             ],
           );
-        }
+        },
+      );
+    }
 
         /// Plain text lyrics fallback (e.g. YouTube Music official lyrics).
         return SingleChildScrollView(

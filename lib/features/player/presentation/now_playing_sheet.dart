@@ -197,15 +197,20 @@ class NowPlayingSheet extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        WavySlider(
-                          position: controller.position,
-                          duration: controller.duration,
-                          isPlaying: controller.isPlaying,
-                          activeColor: accent,
-                          inactiveColor: isDark
-                              ? Colors.white.withValues(alpha: 0.18)
-                              : Colors.black.withValues(alpha: 0.08),
-                          onSeek: controller.seek,
+                        ValueListenableBuilder<Duration>(
+                          valueListenable: controller.positionNotifier,
+                          builder: (context, currentPosition, child) {
+                            return WavySlider(
+                              position: currentPosition,
+                              duration: controller.duration,
+                              isPlaying: controller.isPlaying,
+                              activeColor: accent,
+                              inactiveColor: isDark
+                                  ? Colors.white.withValues(alpha: 0.18)
+                                  : Colors.black.withValues(alpha: 0.08),
+                              onSeek: controller.seek,
+                            );
+                          },
                         ),
                       ],
                     ),

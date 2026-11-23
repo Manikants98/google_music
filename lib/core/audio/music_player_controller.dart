@@ -116,6 +116,14 @@ class MusicPlayerController extends ChangeNotifier {
   /// Buffered duration.
   Duration _bufferedPosition = Duration.zero;
 
+  /// Fine-grained playback position notifier for UI seekbars without rebuilding entire widget trees.
+  final ValueNotifier<Duration> positionNotifier =
+      ValueNotifier<Duration>(Duration.zero);
+
+  /// Fine-grained buffered duration notifier for UI progress indicators without rebuilding entire widget trees.
+  final ValueNotifier<Duration> bufferedPositionNotifier =
+      ValueNotifier<Duration>(Duration.zero);
+
   /// Error message when playback fails.
   String? _errorMessage;
 
@@ -425,6 +433,7 @@ class MusicPlayerController extends ChangeNotifier {
 
     _player.positionStream.listen((pos) {
       _position = pos;
+      positionNotifier.value = pos;
       if (_duration == Duration.zero && _currentSong?.parsedDuration != null) {
         _duration = _currentSong!.parsedDuration!;
       }
@@ -444,7 +453,8 @@ class MusicPlayerController extends ChangeNotifier {
         unawaited(ensureAutoplayQueue());
         _prefetchUpcomingStreams();
       }
-      notifyListeners();
+      /// Note: Position ticks only notify positionNotifier listeners.
+      /// We avoid broadcast notifyListeners() to prevent re-rendering the entire app 5-10 times/second.
     });
 
     _player.durationStream.listen((dur) {
@@ -466,7 +476,7 @@ class MusicPlayerController extends ChangeNotifier {
 
     _player.bufferedPositionStream.listen((buf) {
       _bufferedPosition = buf;
-      notifyListeners();
+      bufferedPositionNotifier.value = buf;
     });
   }
 
@@ -538,6 +548,9 @@ class MusicPlayerController extends ChangeNotifier {
     _status = PlayerStatus.loading;
     _errorMessage = null;
     _position = Duration.zero;
+    positionNotifier.value = Duration.zero;
+    _bufferedPosition = Duration.zero;
+    bufferedPositionNotifier.value = Duration.zero;
     _duration = song.parsedDuration ?? Duration.zero;
     notifyListeners();
 
@@ -723,6 +736,7 @@ class MusicPlayerController extends ChangeNotifier {
   /// Seeks to a specific playback position.
   Future<void> seek(Duration target) async {
     _position = target;
+    positionNotifier.value = target;
     _syncAudioNotification();
     notifyListeners();
     await _player.seek(target);
@@ -1301,6 +1315,8 @@ class MusicPlayerController extends ChangeNotifier {
     _playerSubscription?.cancel();
     _player.dispose();
     _extractor.close();
+    positionNotifier.dispose();
+    bufferedPositionNotifier.dispose();
     super.dispose();
   }
 }
