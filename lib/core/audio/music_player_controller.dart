@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -437,6 +438,12 @@ class MusicPlayerController extends ChangeNotifier {
       if (pos.inSeconds > 0 && pos.inSeconds % 5 == 0) {
         _syncAudioNotification();
       }
+      if (_duration > Duration.zero &&
+          (_duration - pos).inSeconds <= 35 &&
+          pos.inSeconds % 10 == 0) {
+        unawaited(ensureAutoplayQueue());
+        _prefetchUpcomingStreams();
+      }
       notifyListeners();
     });
 
@@ -648,6 +655,7 @@ class MusicPlayerController extends ChangeNotifier {
       _syncAudioNotification();
       notifyListeners();
       unawaited(ensureAutoplayQueue());
+      _prefetchUpcomingStreams();
     } catch (e) {
       if (currentSession != _sessionToken) return;
       _status = PlayerStatus.error;
@@ -959,12 +967,27 @@ class MusicPlayerController extends ChangeNotifier {
 
       if (freshTracks.isNotEmpty) {
         _queue.addAll(freshTracks);
+        _prefetchUpcomingStreams();
       }
     } catch (e) {
       debugPrint('[Autoplay] Failed to fetch similar tracks: $e');
     } finally {
       _isFetchingAutoplay = false;
       notifyListeners();
+    }
+  }
+
+  /// Silently pre-fetches and caches direct stream URLs for upcoming tracks in queue.
+  void _prefetchUpcomingStreams() {
+    if (_queue.isEmpty) return;
+    final nextIndex = _currentIndex + 1;
+    final count = min(2, _queue.length - nextIndex);
+    for (int i = 0; i < count; i++) {
+      final upcomingSong = _queue[nextIndex + i];
+      if (upcomingSong.audioStreamUrl == null ||
+          upcomingSong.audioStreamUrl!.isEmpty) {
+        unawaited(_extractor.prefetch(upcomingSong.id));
+      }
     }
   }
 

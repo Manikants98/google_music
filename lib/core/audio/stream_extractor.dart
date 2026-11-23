@@ -31,14 +31,40 @@ class AudioStreamExtractor {
   /// In-memory cache mapping video ID to cached stream entries.
   final Map<String, StreamCacheEntry> _cache = <String, StreamCacheEntry>{};
 
+  /// In-flight de-duplication map for ongoing stream extraction tasks.
+  final Map<String, Future<List<String>>> _inFlight =
+      <String, Future<List<String>>>{};
+
   /// Clears in-memory stream URL cache and extracted manifests.
   void clearCache() {
     _cache.clear();
+    _inFlight.clear();
   }
 
   /// Invalidates cached URL for a video (useful after 403 or network errors).
   void invalidate(String videoId) {
     _cache.remove(videoId);
+    _inFlight.remove(videoId);
+  }
+
+  /// Returns cached candidate URLs synchronously if available and still valid.
+  List<String>? getCachedCandidateUrls(String videoId) {
+    final cached = _cache[videoId];
+    if (cached != null && cached.isValid) {
+      return cached.candidateUrls;
+    }
+    return null;
+  }
+
+  /// Silently pre-fetches and caches direct stream URLs for upcoming tracks in queue.
+  Future<void> prefetch(String videoId) async {
+    if (videoId.isEmpty) return;
+    final cached = _cache[videoId];
+    if (cached != null && cached.isValid) return;
+    if (_inFlight.containsKey(videoId)) return;
+    try {
+      await getCandidateStreamUrls(videoId);
+    } catch (_) {}
   }
 
   /// Extracts multiple candidate stream URLs for a video, ordered by playback reliability.
@@ -46,6 +72,8 @@ class AudioStreamExtractor {
     String videoId, {
     bool forceRefresh = false,
   }) async {
+    if (videoId.isEmpty) return <String>[];
+
     if (forceRefresh) {
       _cache.remove(videoId);
     }
@@ -55,6 +83,23 @@ class AudioStreamExtractor {
       return cached.candidateUrls;
     }
 
+    final inFlight = _inFlight[videoId];
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final task = _extractCandidatesInternal(videoId);
+    _inFlight[videoId] = task;
+    try {
+      final result = await task;
+      return result;
+    } finally {
+      _inFlight.remove(videoId);
+    }
+  }
+
+  /// Internal tiered manifest extraction pipeline.
+  Future<List<String>> _extractCandidatesInternal(String videoId) async {
     /// Tier 1: Fast-path web client extraction with watch page bypass.
     try {
       final manifest = await _client.videos.streamsClient
@@ -75,7 +120,7 @@ class AudioStreamExtractor {
     try {
       final manifest = await _client.videos.streamsClient
           .getManifest(videoId)
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 10));
 
       final candidates = _extractCandidateUrls(manifest);
       if (candidates.isNotEmpty) {
@@ -96,7 +141,7 @@ class AudioStreamExtractor {
               YoutubeApiClient.android,
             ],
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 10));
 
       final candidates = _extractCandidateUrls(manifest);
       if (candidates.isNotEmpty) {
@@ -123,11 +168,11 @@ class AudioStreamExtractor {
     return candidates.isNotEmpty ? candidates.first : null;
   }
 
-  /// Extracts candidate playback URLs ordered by quality and stability.
+  /// Extracts candidate playback URLs ordered by quality and buffer responsiveness on low internet.
   List<String> _extractCandidateUrls(StreamManifest manifest) {
     final results = <String>[];
 
-    /// 1. Prioritize high bitrate M4A / AAC audio-only streams.
+    /// 1. Prioritize fast-buffering M4A / AAC audio-only streams (itag 140 ~128kbps).
     final aacStreams = manifest.audioOnly
         .where((s) => s.container.name.toLowerCase() == 'mp4')
         .toList();
@@ -136,15 +181,26 @@ class AudioStreamExtractor {
       results.add(bestAac);
     }
 
-    /// 2. Any audio-only stream (Opus / WebM).
-    if (manifest.audioOnly.isNotEmpty) {
-      final bestAudio = manifest.audioOnly.withHighestBitrate().url.toString();
-      if (!results.contains(bestAudio)) {
-        results.add(bestAudio);
+    /// 2. Opus audio-only streams (WebM).
+    final opusStreams = manifest.audioOnly
+        .where((s) => s.container.name.toLowerCase() != 'mp4')
+        .toList();
+    if (opusStreams.isNotEmpty) {
+      final bestOpus = opusStreams.withHighestBitrate().url.toString();
+      if (!results.contains(bestOpus)) {
+        results.add(bestOpus);
+      }
+
+      /// 3. Lightweight Opus stream (~50-70 kbps) as ultra-resilient fallback for 2G/3G low internet.
+      if (opusStreams.length > 1) {
+        final fastLowOpus = opusStreams.sortByBitrate().first.url.toString();
+        if (!results.contains(fastLowOpus)) {
+          results.add(fastLowOpus);
+        }
       }
     }
 
-    /// 3. Muxed MP4 video+audio fallback (extremely resilient against 403 errors).
+    /// 4. Muxed MP4 video+audio fallback (extremely resilient against 403 errors).
     if (manifest.muxed.isNotEmpty) {
       final bestMuxed = manifest.muxed.sortByBitrate().last.url.toString();
       if (!results.contains(bestMuxed)) {
