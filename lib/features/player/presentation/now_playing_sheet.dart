@@ -72,28 +72,17 @@ class NowPlayingSheet extends StatelessWidget {
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(52),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.only(left: 12, right: 5),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      IconButton(
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 35,
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        tooltip: 'Close',
-                      ),
                       Expanded(
-                        child: Center(
-                          child: Text(
-                            'Google Music',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 24,
-                              letterSpacing: -0.2,
-                            ),
+                        child: Text(
+                          'Google Music',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            letterSpacing: -0.2,
                           ),
                         ),
                       ),
@@ -103,12 +92,14 @@ class NowPlayingSheet extends StatelessWidget {
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  value: controller
-                                      .getSongDownloadProgress(song.id),
+                                  value: controller.getSongDownloadProgress(
+                                    song.id,
+                                  ),
                                   strokeWidth: 2.5,
                                   color: accent,
-                                  backgroundColor:
-                                      accent.withValues(alpha: 0.2),
+                                  backgroundColor: accent.withValues(
+                                    alpha: 0.2,
+                                  ),
                                 ),
                               )
                             : Icon(
@@ -123,15 +114,16 @@ class NowPlayingSheet extends StatelessWidget {
                         tooltip: controller.isSongDownloaded(song.id)
                             ? 'Downloaded (Tap to remove)'
                             : (controller.isSongDownloading(song.id)
-                                ? 'Downloading in progress'
-                                : 'Download for offline playback'),
+                                  ? 'Downloading in progress'
+                                  : 'Download for offline playback'),
                         onPressed: () async {
                           if (controller.isSongDownloading(song.id)) {
                             return;
                           }
                           if (controller.isSongDownloaded(song.id)) {
-                            final removed =
-                                await controller.removeDownload(song.id);
+                            final removed = await controller.removeDownload(
+                              song.id,
+                            );
                             if (context.mounted && removed) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

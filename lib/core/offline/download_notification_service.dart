@@ -85,6 +85,47 @@ class DownloadNotificationService {
         'id': id,
         'title': title,
       });
+
+      final navContext = _navKey?.currentContext;
+      if (navContext != null && navContext.mounted) {
+        final theme = Theme.of(navContext);
+        final colorScheme = theme.colorScheme;
+        ScaffoldMessenger.of(navContext).showSnackBar(
+          SnackBar(
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            elevation: 6,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+              ),
+            ),
+            content: Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.greenAccent,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Downloaded: $title',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (_) {}
   }
 

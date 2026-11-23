@@ -15,6 +15,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : AudioServiceActivity() {
     private val channelName = "com.mkx.google_music/download_notification"
     private val downloadChannelId = "google_music_downloads"
+    private val downloadCompleteChannelId = "google_music_download_complete"
     private val notificationId = 9001
     private val activeDownloadNotifs = HashSet<Int>()
     private var methodChannel: MethodChannel? = null
@@ -71,6 +72,8 @@ class MainActivity : AudioServiceActivity() {
                     val title = call.argument<String>("title") ?: "Download Complete"
                     val notifId = if (id.isNotEmpty()) ((Math.abs(id.hashCode()) % 80000) + 10000) else notificationId
 
+                    activeDownloadNotifs.remove(notifId)
+
                     val intent = Intent(this, MainActivity::class.java).apply {
                         action = Intent.ACTION_VIEW
                         flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -83,25 +86,18 @@ class MainActivity : AudioServiceActivity() {
                         PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
                     )
 
-                    val builder = NotificationCompat.Builder(this, downloadChannelId)
+                    val builder = NotificationCompat.Builder(this, downloadCompleteChannelId)
                         .setSmallIcon(R.drawable.ic_download_notification)
                         .setColor(0xFFFF4E4E.toInt())
                         .setContentTitle("Downloaded: $title")
-                        .setContentText("Saved for offline playback")
+                        .setContentText("Saved for offline playback in Library")
                         .setProgress(0, 0, false)
                         .setOngoing(false)
                         .setAutoCancel(true)
-                        .setGroup("com.mkx.google_music.downloads")
                         .setContentIntent(pendingIntent)
-                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
                     notificationManager.notify(notifId, builder.build())
-
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        notificationManager.cancel(notifId)
-                        activeDownloadNotifs.remove(notifId)
-                    }, 4000)
-
                     result.success(true)
                 }
                 "cancel" -> {
@@ -205,15 +201,28 @@ class MainActivity : AudioServiceActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Downloads"
-            val descriptionText = "Offline Music Download Progress"
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel(downloadChannelId, name, importance).apply {
-                description = descriptionText
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val progressChannel = NotificationChannel(
+                downloadChannelId,
+                "Download Progress",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Offline Music Download Progress"
                 setShowBadge(false)
             }
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(progressChannel)
+
+            val completeChannel = NotificationChannel(
+                downloadCompleteChannelId,
+                "Completed Downloads",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Offline music download completion notifications"
+                setShowBadge(true)
+                enableVibration(true)
+            }
+            notificationManager.createNotificationChannel(completeChannel)
         }
     }
 }
