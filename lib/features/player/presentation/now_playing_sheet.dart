@@ -326,14 +326,12 @@ class NowPlayingSheet extends StatelessWidget {
                           ),
                         ),
                         onSelectedIndexChanged: (int? index) {
-                          if (index != null) {
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) =>
-                                  QueueBottomSheet(initialTab: index),
-                            );
+                          if (index == 0) {
+                            QueueBottomSheet.showUpNext(context);
+                          } else if (index == 1) {
+                            QueueBottomSheet.showLyrics(context);
+                          } else if (index == 2) {
+                            QueueBottomSheet.showRelated(context);
                           }
                         },
                         actions: const <M3EButtonGroupAction>[

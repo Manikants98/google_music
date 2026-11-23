@@ -267,18 +267,20 @@ class SettingsScreen extends StatelessWidget {
               _SettingsItem(
                 icon: Icons.system_update_rounded,
                 title: 'Check for Updates',
-                subtitle: 'Current version: v${AppUpdateService.currentAppVersion}',
+                subtitle:
+                    'Current version: v${AppUpdateService.currentAppVersion}',
                 trailing: Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
                   color: colorScheme.onSurfaceVariant,
                 ),
-                onTap: () => AppUpdateService.checkAndPrompt(context, manual: true),
+                onTap: () =>
+                    AppUpdateService.checkAndPrompt(context, manual: true),
               ),
               _SettingsItem(
                 icon: Icons.code_rounded,
                 title: 'Developer',
-                subtitle: 'Mani Kant Sharma (@Manikants98)',
+                subtitle: 'Mani Kant Sharma',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -856,9 +858,7 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         icon: Icon(Icons.delete_sweep_rounded, color: accent, size: 28),
         title: Text(

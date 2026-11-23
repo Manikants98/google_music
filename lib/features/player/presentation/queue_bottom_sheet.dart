@@ -9,20 +9,68 @@ import '../../../core/network/lyrics_service.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../models/song_model.dart';
 
-/// Modal bottom sheet presenting dynamic tabs for Up Next queue, synchronized Lyrics, and Related recommendations.
+/// The distinct modal sheet category displayed from the Now Playing screen.
+enum PlayerSheetType {
+  /// The active playback queue with reordering and continuous similar suggestions.
+  upNext,
+
+  /// Dynamic synchronized karaoke lyrics and official plain lyrics fallback.
+  lyrics,
+
+  /// Algorithmic song recommendations, artist catalog, and audio metadata.
+  related,
+}
+
+/// Modal bottom sheet presenting a dedicated view for Up Next queue, synchronized Lyrics, or Related recommendations.
 class QueueBottomSheet extends StatefulWidget {
-  /// The initially selected tab index (0: UP NEXT, 1: LYRICS, 2: RELATED).
-  final int initialTab;
+  /// Category of sheet to display.
+  final PlayerSheetType sheetType;
 
   /// Creates a player details bottom sheet.
-  const QueueBottomSheet({super.key, this.initialTab = 0});
+  const QueueBottomSheet({
+    super.key,
+    this.sheetType = PlayerSheetType.upNext,
+    int? initialTab,
+  });
+
+  /// Displays the dedicated Up Next queue bottom sheet.
+  static Future<void> showUpNext(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          const QueueBottomSheet(sheetType: PlayerSheetType.upNext),
+    );
+  }
+
+  /// Displays the dedicated Lyrics bottom sheet.
+  static Future<void> showLyrics(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          const QueueBottomSheet(sheetType: PlayerSheetType.lyrics),
+    );
+  }
+
+  /// Displays the dedicated Related recommendations bottom sheet.
+  static Future<void> showRelated(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          const QueueBottomSheet(sheetType: PlayerSheetType.related),
+    );
+  }
 
   @override
   State<QueueBottomSheet> createState() => _QueueBottomSheetState();
 }
 
 class _QueueBottomSheetState extends State<QueueBottomSheet> {
-  late int _activeTab;
   late final ScrollController _queueScrollController;
   late final ScrollController _lyricsScrollController;
 
@@ -47,21 +95,26 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _activeTab = widget.initialTab;
     _queueScrollController = ScrollController();
     _lyricsScrollController = ScrollController();
-    _queueScrollController.addListener(_onQueueScroll);
 
-    /// Eagerly ensure plenty of similar tracks when the queue sheet is opened.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final controller = context.read<MusicPlayerController>();
-        final remaining = controller.queue.length - 1 - controller.currentIndex;
-        if (remaining <= 4) {
-          controller.ensureAutoplayQueue(force: true);
+    if (widget.sheetType == PlayerSheetType.upNext) {
+      _queueScrollController.addListener(_onQueueScroll);
+
+      /// Eagerly ensure plenty of similar tracks when the queue sheet is opened.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final controller = context.read<MusicPlayerController>();
+          if (!controller.isPlaylistQueue) {
+            final remaining =
+                controller.queue.length - 1 - controller.currentIndex;
+            if (remaining <= 4) {
+              controller.ensureAutoplayQueue(force: true);
+            }
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   @override
@@ -93,8 +146,11 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
       _cachedSongId = song.id;
       _lastSyncedIndex = -1;
       _userIsScrollingLyrics = false;
-      _lyricsFuture = controller.lyricsService.getLyrics(song);
-      _relatedFuture = _fetchRelatedData(controller, song);
+      if (widget.sheetType == PlayerSheetType.lyrics) {
+        _lyricsFuture = controller.lyricsService.getLyrics(song);
+      } else if (widget.sheetType == PlayerSheetType.related) {
+        _relatedFuture = _fetchRelatedData(controller, song);
+      }
     }
   }
 
@@ -128,7 +184,6 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.82,
@@ -149,102 +204,91 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E1E1E)
-                      : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(21),
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF2E2E2E)
-                        : colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: <Widget>[
-                    _buildTabButton(0, 'UP NEXT', theme, controller),
-                    _buildTabButton(1, 'LYRICS', theme, controller),
-                    _buildTabButton(2, 'RELATED', theme, controller),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Divider(height: 1, color: colorScheme.outlineVariant),
-            Expanded(
-              child: IndexedStack(
-                index: _activeTab,
+              padding: const EdgeInsets.fromLTRB(20, 0, 12, 10),
+              child: Row(
                 children: <Widget>[
-                  _buildQueueTab(context, controller, theme, colorScheme),
-                  _buildLyricsTab(
-                    context,
-                    controller,
-                    theme,
-                    colorScheme,
-                    currentSong,
+                  Icon(
+                    switch (widget.sheetType) {
+                      PlayerSheetType.upNext => Icons.queue_music_rounded,
+                      PlayerSheetType.lyrics => Icons.lyrics_rounded,
+                      PlayerSheetType.related => Icons.auto_awesome_rounded,
+                    },
+                    color: controller.dynamicAccentColor,
+                    size: 22,
                   ),
-                  _buildRelatedTab(
-                    context,
-                    controller,
-                    theme,
-                    colorScheme,
-                    currentSong,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          switch (widget.sheetType) {
+                            PlayerSheetType.upNext => 'Up Next',
+                            PlayerSheetType.lyrics => 'Lyrics',
+                            PlayerSheetType.related => 'Related',
+                          },
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        if (currentSong != null)
+                          Text(
+                            switch (widget.sheetType) {
+                              PlayerSheetType.upNext =>
+                                '${controller.queue.length} songs in queue',
+                              PlayerSheetType.lyrics =>
+                                '${currentSong.title} • ${currentSong.artist}',
+                              PlayerSheetType.related =>
+                                'More from ${currentSong.artist}',
+                            },
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+                    color: colorScheme.onSurfaceVariant,
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds a pill tab button in the header.
-  Widget _buildTabButton(
-    int index,
-    String label,
-    ThemeData theme,
-    MusicPlayerController controller,
-  ) {
-    final isDark = theme.brightness == Brightness.dark;
-    final isSelected = _activeTab == index;
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          setState(() {
-            _activeTab = index;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? controller.dynamicAccentColor.withValues(
-                    alpha: isDark ? 0.22 : 0.15,
-                  )
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(21),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              letterSpacing: 1.1,
-              color: isSelected
-                  ? (isDark ? Colors.white : theme.colorScheme.primary)
-                  : (isDark
-                        ? Colors.white60
-                        : theme.colorScheme.onSurfaceVariant),
+            Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
-          ),
+            Expanded(
+              child: switch (widget.sheetType) {
+                PlayerSheetType.upNext =>
+                  _buildQueueTab(context, controller, theme, colorScheme),
+                PlayerSheetType.lyrics => _buildLyricsTab(
+                    context,
+                    controller,
+                    theme,
+                    colorScheme,
+                    currentSong,
+                  ),
+                PlayerSheetType.related => _buildRelatedTab(
+                    context,
+                    controller,
+                    theme,
+                    colorScheme,
+                    currentSong,
+                  ),
+              },
+            ),
+          ],
         ),
       ),
     );
