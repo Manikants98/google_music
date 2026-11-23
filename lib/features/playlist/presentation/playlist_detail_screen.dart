@@ -6,6 +6,7 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../core/widgets/track_tile.dart';
 import '../../../models/playlist_model.dart';
+import '../../player/presentation/now_playing_sheet.dart';
 
 /// Detailed view for a custom user playlist displaying tracks, playback actions, and management controls.
 class PlaylistDetailScreen extends StatelessWidget {
@@ -137,7 +138,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                             'Play All',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onPressed: () => controller.playPlaylist(playlist, shuffle: false),
+                          onPressed: () {
+                            controller.playPlaylist(playlist, shuffle: false);
+                            NowPlayingSheet.show(context);
+                          },
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
@@ -159,7 +163,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                             'Shuffle',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onPressed: () => controller.playPlaylist(playlist, shuffle: true),
+                          onPressed: () {
+                            controller.playPlaylist(playlist, shuffle: true);
+                            NowPlayingSheet.show(context);
+                          },
                         ),
                       ],
                     ),
@@ -213,6 +220,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                   itemCount: songs.length,
                   onTap: (int index) {
                     controller.playPlaylist(playlist, startIndex: index);
+                    NowPlayingSheet.show(context);
                   },
                   itemBuilder: (BuildContext context, int index) {
                     final song = songs[index];

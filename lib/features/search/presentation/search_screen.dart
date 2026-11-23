@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/audio/music_player_controller.dart';
 import '../../../models/song_model.dart';
+import '../../player/presentation/now_playing_sheet.dart';
 
 /// Search and discovery screen in Google Music.
 class SearchScreen extends StatefulWidget {
@@ -71,7 +72,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  /// Triggers debounced InnerTube search.
+  /// Triggers debounced InnerTube search with a 2-second delay to ensure smooth phone typing.
   void _onQueryChanged(String query) {
     _debounceTimer?.cancel();
     final trimmed = query.trim();
@@ -85,22 +86,35 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 450), () async {
-      setState(() {
-        _isSearching = true;
-        _hasSearched = true;
-      });
-
-      final controller = context.read<MusicPlayerController>();
-      final results = await controller.innerTubeClient.search(trimmed);
-
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isSearching = false;
-        });
-      }
+    _debounceTimer = Timer(const Duration(seconds: 2), () {
+      _performSearch(trimmed);
     });
+  }
+
+  /// Immediately executes search when user submits keyboard or taps search.
+  void _searchImmediately(String query) {
+    _debounceTimer?.cancel();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    _performSearch(trimmed);
+  }
+
+  /// Dispatches search query to InnerTube API and updates state.
+  Future<void> _performSearch(String query) async {
+    setState(() {
+      _isSearching = true;
+      _hasSearched = true;
+    });
+
+    final controller = context.read<MusicPlayerController>();
+    final results = await controller.innerTubeClient.search(query);
+
+    if (mounted && _searchCtrl.text.trim() == query) {
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    }
   }
 
   /// Quick language selection search.
@@ -159,6 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: TextField(
                         controller: _searchCtrl,
                         onChanged: _onQueryChanged,
+                        onSubmitted: _searchImmediately,
                         textInputAction: TextInputAction.search,
                         textAlignVertical: TextAlignVertical.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -252,6 +267,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     _searchResults[index],
                                     queue: _searchResults,
                                   );
+                                  NowPlayingSheet.show(context);
                                 },
                                 itemBuilder: (BuildContext context, int index) {
                                   return M3ESongTile(
@@ -389,6 +405,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     recentHistory[index],
                                     queue: recentHistory,
                                   );
+                                  NowPlayingSheet.show(context);
                                 },
                                 itemBuilder: (BuildContext context, int index) {
                                   return M3ESongTile(

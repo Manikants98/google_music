@@ -130,6 +130,9 @@ class MusicPlayerController extends ChangeNotifier {
   /// Whether an autoplay recommendation fetch is currently in flight.
   bool _isFetchingAutoplay = false;
 
+  /// Whether current playback queue is bound strictly to a playlist without autoplay expansion.
+  bool _isPlaylistQueue = false;
+
   /// Whether autoplay continuous recommendation is enabled.
   bool _isAutoplayEnabled = true;
 
@@ -223,6 +226,9 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Whether an autoplay recommendation fetch is currently in flight.
   bool get isFetchingAutoplay => _isFetchingAutoplay;
+
+  /// Whether current playback queue is strictly bounded to a playlist.
+  bool get isPlaylistQueue => _isPlaylistQueue;
 
   /// Dynamic accent color.
   Color get dynamicAccentColor => _dynamicAccentColor;
@@ -450,7 +456,9 @@ class MusicPlayerController extends ChangeNotifier {
       if (_duration > Duration.zero &&
           (_duration - pos).inSeconds <= 35 &&
           pos.inSeconds % 10 == 0) {
-        unawaited(ensureAutoplayQueue());
+        if (!_isPlaylistQueue) {
+          unawaited(ensureAutoplayQueue());
+        }
         _prefetchUpcomingStreams();
       }
       /// Note: Position ticks only notify positionNotifier listeners.
@@ -493,7 +501,9 @@ class MusicPlayerController extends ChangeNotifier {
     }
 
     if (_currentIndex + 1 >= _queue.length && _loopMode != LoopMode.all) {
-      await ensureAutoplayQueue(force: true);
+      if (!_isPlaylistQueue) {
+        await ensureAutoplayQueue(force: true);
+      }
     }
 
     if (_currentIndex + 1 < _queue.length || _loopMode == LoopMode.all) {
@@ -507,8 +517,18 @@ class MusicPlayerController extends ChangeNotifier {
   }
 
   /// Plays a given song with monotonic token verification to prevent track mismatch.
-  Future<void> playSong(SongModel song, {List<SongModel>? newQueue}) async {
+  Future<void> playSong(
+    SongModel song, {
+    List<SongModel>? newQueue,
+    bool? isPlaylistQueue,
+  }) async {
     final currentSession = ++_sessionToken;
+
+    if (isPlaylistQueue != null) {
+      _isPlaylistQueue = isPlaylistQueue;
+    } else if (newQueue != null) {
+      _isPlaylistQueue = false;
+    }
 
     /// Register early skip if active track was interrupted during playback.
     if (_currentSong != null && _position > Duration.zero) {
@@ -710,7 +730,9 @@ class MusicPlayerController extends ChangeNotifier {
     if (_currentIndex + 1 < _queue.length) {
       await playSong(_queue[_currentIndex + 1]);
     } else {
-      await ensureAutoplayQueue(force: true);
+      if (!_isPlaylistQueue) {
+        await ensureAutoplayQueue(force: true);
+      }
       if (_currentIndex + 1 < _queue.length) {
         await playSong(_queue[_currentIndex + 1]);
       } else if (_loopMode == LoopMode.all) {
@@ -902,6 +924,8 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Ensures the queue has enough upcoming similar tracks for endless continuous playback.
   Future<void> ensureAutoplayQueue({bool force = false}) async {
+    /// In playlist queue mode, strictly respect playlist boundary without autoplay expansion.
+    if (_isPlaylistQueue) return;
     if (!_isAutoplayEnabled && !force) return;
     if (_isFetchingAutoplay) return;
 
@@ -1141,14 +1165,15 @@ class MusicPlayerController extends ChangeNotifier {
   /// Plays a full custom playlist starting from [startIndex], with optional shuffle mode.
   void playPlaylist(PlaylistModel playlist, {int startIndex = 0, bool shuffle = false}) {
     if (playlist.songs.isEmpty) return;
+    _isPlaylistQueue = true;
     if (shuffle) {
       final shuffled = List<SongModel>.from(playlist.songs)..shuffle();
       _isShuffle = true;
-      playSong(shuffled.first, newQueue: shuffled);
+      playSong(shuffled.first, newQueue: shuffled, isPlaylistQueue: true);
     } else {
       _isShuffle = false;
       final targetIndex = startIndex.clamp(0, playlist.songs.length - 1);
-      playSong(playlist.songs[targetIndex], newQueue: playlist.songs);
+      playSong(playlist.songs[targetIndex], newQueue: playlist.songs, isPlaylistQueue: true);
     }
   }
 

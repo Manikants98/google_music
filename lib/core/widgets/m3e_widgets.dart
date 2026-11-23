@@ -529,62 +529,66 @@ class SearchScreenSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
+      physics: const BouncingScrollPhysics(),
+      children: <Widget>[
+        ClipRRect(
           borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: M3EShimmer(
-          child: Column(
-            children: List<Widget>.generate(6, (index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: <Widget>[
-                    M3ESkeletonBox(
-                      width: 42,
-                      height: 42,
-                      radius: 4,
-                      color: colorScheme.surfaceContainerHigh,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          M3ESkeletonBox(
-                            width: 160,
-                            height: 14,
-                            radius: 3,
-                            color: colorScheme.surfaceContainerHigh,
+          child: Container(
+            color: colorScheme.surfaceContainerHighest,
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            child: M3EShimmer(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List<Widget>.generate(6, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: <Widget>[
+                        M3ESkeletonBox(
+                          width: 42,
+                          height: 42,
+                          radius: 4,
+                          color: colorScheme.surfaceContainerHigh,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              M3ESkeletonBox(
+                                width: 160,
+                                height: 14,
+                                radius: 3,
+                                color: colorScheme.surfaceContainerHigh,
+                              ),
+                              const SizedBox(height: 6),
+                              M3ESkeletonBox(
+                                width: 100,
+                                height: 11,
+                                radius: 3,
+                                color: colorScheme.surfaceContainerHigh,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          M3ESkeletonBox(
-                            width: 100,
-                            height: 11,
-                            radius: 3,
-                            color: colorScheme.surfaceContainerHigh,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 12),
+                        M3ESkeletonBox(
+                          width: 16,
+                          height: 16,
+                          radius: 4,
+                          color: colorScheme.surfaceContainerHigh,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    M3ESkeletonBox(
-                      width: 16,
-                      height: 16,
-                      radius: 4,
-                      color: colorScheme.surfaceContainerHigh,
-                    ),
-                  ],
-                ),
-              );
-            }),
+                  );
+                }),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

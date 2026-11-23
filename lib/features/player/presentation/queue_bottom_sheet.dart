@@ -80,7 +80,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
     final currentScroll = _queueScrollController.position.pixels;
     if (currentScroll >= maxScroll - 250) {
       final controller = context.read<MusicPlayerController>();
-      if (!controller.isFetchingAutoplay) {
+      if (!controller.isFetchingAutoplay && !controller.isPlaylistQueue) {
         controller.ensureAutoplayQueue(force: true);
       }
     }
@@ -289,13 +289,17 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Icon(
-                    Icons.graphic_eq_rounded,
+                    controller.isPlaylistQueue
+                        ? Icons.playlist_play_rounded
+                        : Icons.graphic_eq_rounded,
                     size: 14,
                     color: colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Similar songs',
+                    controller.isPlaylistQueue
+                        ? 'Playlist songs'
+                        : 'Similar songs',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
@@ -314,7 +318,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
             buildDefaultDragHandles: false,
             itemCount: queue.length,
             onReorderItem: controller.reorderQueue,
-            footer: controller.isFetchingAutoplay
+            footer: (!controller.isPlaylistQueue && controller.isFetchingAutoplay)
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
