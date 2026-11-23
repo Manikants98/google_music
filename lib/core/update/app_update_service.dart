@@ -193,17 +193,44 @@ class AppUpdateService {
     if (update != null) {
       AppUpdateDialog.show(context, update);
     } else if (manual) {
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+      final isDark = theme.brightness == Brightness.dark;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          elevation: 6,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
           content: Row(
             children: <Widget>[
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Google Music is up to date (v$currentAppVersion)'),
+              Icon(
+                Icons.check_circle_rounded,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Google Music is up to date (v$currentAppVersion)',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
       );
     }

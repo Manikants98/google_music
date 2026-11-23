@@ -106,6 +106,24 @@ class GoogleMusicApp extends StatelessWidget {
             scaffoldBackgroundColor: dynamicDarkSurface,
             colorScheme: unifiedDarkScheme,
             fontFamily: font,
+            snackBarTheme: SnackBarThemeData(
+              backgroundColor: dynamicDarkCard,
+              contentTextStyle: TextStyle(
+                color: const Color(0xFFE6E1E5),
+                fontFamily: font,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  width: 1,
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              elevation: 4,
+            ),
           );
 
           /// Google Light Mode Color Grading: Soft Google Snow surface subtly tinted by song palette.
@@ -142,6 +160,24 @@ class GoogleMusicApp extends StatelessWidget {
             scaffoldBackgroundColor: dynamicLightSurface,
             colorScheme: unifiedLightScheme,
             fontFamily: font,
+            snackBarTheme: SnackBarThemeData(
+              backgroundColor: dynamicLightCard,
+              contentTextStyle: TextStyle(
+                color: const Color(0xFF191C1E),
+                fontFamily: font,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  width: 1,
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              elevation: 4,
+            ),
           );
 
           final isDark =
