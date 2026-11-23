@@ -18,11 +18,35 @@ class AppUpdateService {
   static const String githubRepo = 'google_music';
 
   /// Active application semantic version name.
-  static const String currentAppVersion = '1.0.0';
+  static const String currentAppVersion = '1.0.1';
 
-  /// Platform channel communicating with Android native package installer.
+  /// Cached version string initialized from package or fallback.
+  static String _cachedVersion = currentAppVersion;
+
+  /// Version tag that user explicitly dismissed with "Later" in the active session.
+  static String? _dismissedVersion;
+
+  /// Marks a version as dismissed for automatic prompts during the active session.
+  static void dismissVersion(String version) {
+    _dismissedVersion = version;
+  }
+
+  /// Platform channel communicating with Android native package installer and version metadata.
   static const MethodChannel _channel =
       MethodChannel('com.mkx.google_music/download_notification');
+
+  /// Retrieves the active version name from Android package manager or cached fallback.
+  static Future<String> getAppVersion() async {
+    try {
+      final String? version =
+          await _channel.invokeMethod<String>('getAppVersion');
+      if (version != null && version.isNotEmpty) {
+        _cachedVersion = version;
+        return version;
+      }
+    } catch (_) {}
+    return _cachedVersion;
+  }
 
   /// Compares two semver strings (e.g. '1.0.1' vs '1.0.0').
   /// Returns 1 if v1 > v2, -1 if v1 < v2, and 0 if equal.
@@ -76,7 +100,8 @@ class AppUpdateService {
       final publishedAt =
           rawPublished != null ? DateTime.tryParse(rawPublished) : null;
 
-      final isNewer = compareVersions(tagName, currentAppVersion) > 0;
+      final currentVer = await getAppVersion();
+      final isNewer = compareVersions(tagName, currentVer) > 0;
       if (!isNewer) {
         return null;
       }
@@ -191,8 +216,13 @@ class AppUpdateService {
     if (!context.mounted) return;
 
     if (update != null) {
+      if (!manual && _dismissedVersion == update.version) {
+        return;
+      }
       AppUpdateDialog.show(context, update);
     } else if (manual) {
+      final currentVer = await getAppVersion();
+      if (!context.mounted) return;
       final theme = Theme.of(context);
       final colorScheme = theme.colorScheme;
       final isDark = theme.brightness == Brightness.dark;
@@ -221,7 +251,7 @@ class AppUpdateService {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Google Music is up to date (v$currentAppVersion)',
+                  'Google Music is up to date (v$currentVer)',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,

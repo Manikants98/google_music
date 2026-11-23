@@ -86,6 +86,7 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
     return PopScope(
       canPop: !_isDownloading,
       child: AlertDialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         backgroundColor: colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
@@ -268,7 +269,10 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
         actions: <Widget>[
           if (!_isDownloading) ...<Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                AppUpdateService.dismissVersion(widget.updateInfo.version);
+                Navigator.of(context).pop();
+              },
               child: Text(
                 'Later',
                 style: TextStyle(

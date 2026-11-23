@@ -131,6 +131,19 @@ class MainActivity : AudioServiceActivity() {
                     pendingRoute = null
                     result.success(route)
                 }
+                "getAppVersion" -> {
+                    try {
+                        val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            packageManager.getPackageInfo(packageName, 0)
+                        }
+                        result.success(pInfo.versionName ?: "1.0.1")
+                    } catch (e: Exception) {
+                        result.success("1.0.1")
+                    }
+                }
                 "installApk" -> {
                     val filePath = call.argument<String>("filePath")
                     if (filePath != null) {
