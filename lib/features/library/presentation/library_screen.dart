@@ -226,12 +226,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    '${playlist.trackCount} songs',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontSize: 12,
-                                    ),
+                                  Row(
+                                    children: <Widget>[
+                                      Text(
+                                        '${playlist.trackCount} songs',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (controller.isPlaylistFullyDownloaded(
+                                          playlist.songs)) ...<Widget>[
+                                        const SizedBox(width: 6),
+                                        Icon(
+                                          Icons.download_done_rounded,
+                                          size: 13,
+                                          color: controller.dynamicAccentColor,
+                                        ),
+                                      ] else if (controller
+                                          .isPlaylistDownloading(
+                                              playlist.songs)) ...<Widget>[
+                                        const SizedBox(width: 6),
+                                        SizedBox(
+                                          width: 10,
+                                          height: 10,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color:
+                                                controller.dynamicAccentColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
                               ),

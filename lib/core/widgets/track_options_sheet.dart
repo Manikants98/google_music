@@ -38,7 +38,7 @@ class TrackOptionsSheet extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       child: SafeArea(
         top: false,
         child: Column(
@@ -58,11 +58,7 @@ class TrackOptionsSheet extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: <Widget>[
-                M3EAlbumArt(
-                  imageUrl: song.thumbnailUrl,
-                  size: 46,
-                  radius: 8,
-                ),
+                M3EAlbumArt(imageUrl: song.thumbnailUrl, size: 46, radius: 8),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -112,8 +108,8 @@ class TrackOptionsSheet extends StatelessWidget {
               icon: isDownloaded
                   ? Icons.download_done_rounded
                   : (isDownloading
-                      ? Icons.downloading_rounded
-                      : Icons.download_for_offline_outlined),
+                        ? Icons.downloading_rounded
+                        : Icons.download_for_offline_outlined),
               title: isDownloaded
                   ? 'Remove from Offline'
                   : (isDownloading ? 'Downloading...' : 'Download for Offline'),
@@ -129,7 +125,9 @@ class TrackOptionsSheet extends StatelessWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Removed "${song.title}" from offline downloads'),
+                        content: Text(
+                          'Removed "${song.title}" from offline downloads',
+                        ),
                         duration: const Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(

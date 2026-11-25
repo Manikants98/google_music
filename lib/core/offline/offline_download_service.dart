@@ -29,6 +29,15 @@ class OfflineDownloadService extends ChangeNotifier {
   /// Set of cancelled download song IDs.
   final Set<String> _cancelledDownloads = <String>{};
 
+  /// Batch queue of songs waiting to be downloaded.
+  final List<SongModel> _downloadQueue = <SongModel>[];
+
+  /// Set of song IDs currently waiting in the batch download queue.
+  final Set<String> _queuedSongIds = <String>{};
+
+  /// Whether the batch download queue is actively being processed.
+  bool _isProcessingBatch = false;
+
   /// Callback when a download's progress updates (song, percentage 0-100, isComplete).
   void Function(SongModel song, int progressPercent, bool isComplete)?
       onDownloadProgressUpdated;
@@ -98,6 +107,20 @@ class OfflineDownloadService extends ChangeNotifier {
   bool isDownloading(String songId) {
     return _activeDownloads.contains(songId);
   }
+
+  /// Checks if a song is either actively downloading or waiting in the batch queue.
+  bool isDownloadingOrQueued(String songId) {
+    return _activeDownloads.contains(songId) || _queuedSongIds.contains(songId);
+  }
+
+  /// Whether any batch download operation is actively in flight or queued.
+  bool get isBatchDownloading =>
+      _isProcessingBatch ||
+      _queuedSongIds.isNotEmpty ||
+      _activeDownloads.isNotEmpty;
+
+  /// Total number of songs remaining in the batch queue.
+  int get queuedBatchLength => _downloadQueue.length;
 
   /// Retrieves download progress fraction for a song (0.0 to 1.0), or null if not downloading.
   double? getDownloadProgress(String songId) {
@@ -350,6 +373,81 @@ class OfflineDownloadService extends ChangeNotifier {
     } catch (e) {
       debugPrint('[OfflineDownloadService] Clear all downloads error: $e');
     }
+  }
+
+  /// Queues a collection of songs for sequential offline download.
+  Future<void> downloadSongsBatch(
+    List<SongModel> songs,
+    AudioStreamExtractor extractor,
+  ) async {
+    final List<SongModel> pending = songs.where((SongModel s) {
+      return !isDownloaded(s.id) && !isDownloadingOrQueued(s.id);
+    }).toList();
+
+    if (pending.isEmpty) return;
+
+    for (final song in pending) {
+      _downloadQueue.add(song);
+      _queuedSongIds.add(song.id);
+    }
+    notifyListeners();
+
+    unawaited(_processBatchQueue(extractor));
+  }
+
+  /// Sequentially downloads queued songs to avoid network throttling or rate limits.
+  Future<void> _processBatchQueue(AudioStreamExtractor extractor) async {
+    if (_isProcessingBatch) return;
+    _isProcessingBatch = true;
+
+    try {
+      while (_downloadQueue.isNotEmpty) {
+        final song = _downloadQueue.removeAt(0);
+        _queuedSongIds.remove(song.id);
+        notifyListeners();
+
+        if (isDownloaded(song.id) || _cancelledDownloads.contains(song.id)) {
+          continue;
+        }
+
+        try {
+          await downloadSong(song, extractor);
+        } catch (e) {
+          debugPrint(
+            '[OfflineDownloadService] Batch track download failed for ${song.title}: $e',
+          );
+        }
+      }
+    } finally {
+      _isProcessingBatch = false;
+      notifyListeners();
+    }
+  }
+
+  /// Cancels all queued batch items and currently active downloads.
+  void cancelAllBatchDownloads() {
+    _downloadQueue.clear();
+    _queuedSongIds.clear();
+    final List<String> activeIds = _activeDownloads.toList();
+    for (final id in activeIds) {
+      cancelDownload(id);
+    }
+    notifyListeners();
+  }
+
+  /// Removes offline storage for a list of songs simultaneously.
+  Future<void> removeDownloadsBatch(List<String> songIds) async {
+    for (final id in songIds) {
+      _queuedSongIds.remove(id);
+      _downloadQueue.removeWhere((SongModel s) => s.id == id);
+      if (_activeDownloads.contains(id)) {
+        cancelDownload(id);
+      }
+      if (isDownloaded(id)) {
+        await removeDownload(id);
+      }
+    }
+    notifyListeners();
   }
 
   /// Loads persisted song metadata registry from disk.

@@ -46,7 +46,7 @@ class M3ESongTile extends StatelessWidget {
     this.isPersonalPick = false,
     this.subtitle,
     this.trailing,
-    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    this.padding = const EdgeInsets.only(left: 12, right: 4, bottom: 10, top: 10),
     this.isStandalone = false,
     this.interactive = false,
   });
@@ -74,10 +74,9 @@ class M3ESongTile extends StatelessWidget {
     final isCurrent = context.select<MusicPlayerController, bool>(
       (c) => c.currentSong?.id == song.id,
     );
-    final isPlaying = isCurrent &&
-        context.select<MusicPlayerController, bool>(
-          (c) => c.isPlaying,
-        );
+    final isPlaying =
+        isCurrent &&
+        context.select<MusicPlayerController, bool>((c) => c.isPlaying);
     final isDownloaded = context.select<MusicPlayerController, bool>(
       (c) => c.isSongDownloaded(song.id),
     );

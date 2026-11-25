@@ -1114,6 +1114,35 @@ class MusicPlayerController extends ChangeNotifier {
     return offlineService.downloadSong(song, _extractor);
   }
 
+  /// Queues a collection of songs for sequential batch downloading.
+  Future<void> downloadSongsBatch(List<SongModel> songs) {
+    _initOfflineServiceCallbacks();
+    return offlineService.downloadSongsBatch(songs, _extractor);
+  }
+
+  /// Cancels all queued batch downloads and ongoing downloads.
+  void cancelAllBatchDownloads() => offlineService.cancelAllBatchDownloads();
+
+  /// Removes offline storage for a list of songs simultaneously.
+  Future<void> removeDownloadsBatch(List<String> songIds) =>
+      offlineService.removeDownloadsBatch(songIds);
+
+  /// Whether a song is downloading or waiting in the batch queue.
+  bool isSongDownloadingOrQueued(String songId) =>
+      offlineService.isDownloadingOrQueued(songId);
+
+  /// Number of downloaded songs in a playlist.
+  int getPlaylistDownloadedCount(List<SongModel> songs) =>
+      songs.where((SongModel s) => isSongDownloaded(s.id)).length;
+
+  /// Whether all songs in a playlist are downloaded offline.
+  bool isPlaylistFullyDownloaded(List<SongModel> songs) =>
+      songs.isNotEmpty && songs.every((SongModel s) => isSongDownloaded(s.id));
+
+  /// Whether any songs in a playlist are currently downloading or queued.
+  bool isPlaylistDownloading(List<SongModel> songs) =>
+      songs.any((SongModel s) => isSongDownloadingOrQueued(s.id));
+
   /// Removes offline download for track.
   Future<bool> removeDownload(String songId) =>
       offlineService.removeDownload(songId);

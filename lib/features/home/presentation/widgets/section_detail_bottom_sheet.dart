@@ -123,7 +123,7 @@ class _SectionDetailBottomSheetState extends State<SectionDetailBottomSheet> {
                       ],
                     ),
                   ),
-                  if (_tracks.isNotEmpty)
+                  if (_tracks.isNotEmpty) ...<Widget>[
                     M3EButton(
                       label: const Text('Play all'),
                       style: M3EButtonStyle.tonal,
@@ -132,6 +132,46 @@ class _SectionDetailBottomSheetState extends State<SectionDetailBottomSheet> {
                         controller.playSong(_tracks.first, newQueue: _tracks);
                       },
                     ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: Icon(
+                        controller.isPlaylistFullyDownloaded(_tracks)
+                            ? Icons.download_done_rounded
+                            : (controller.isPlaylistDownloading(_tracks)
+                                ? Icons.hourglass_top_rounded
+                                : Icons.download_rounded),
+                        size: 20,
+                        color: controller.isPlaylistFullyDownloaded(_tracks)
+                            ? controller.dynamicAccentColor
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      tooltip: controller.isPlaylistFullyDownloaded(_tracks)
+                          ? 'All tracks downloaded'
+                          : 'Download all tracks',
+                      onPressed: () {
+                        if (controller.isPlaylistFullyDownloaded(_tracks)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'All tracks in this section are already saved offline.',
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        } else {
+                          controller.downloadSongsBatch(_tracks);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Downloading ${_tracks.length} tracks in background...',
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                   const SizedBox(width: 6),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 22),

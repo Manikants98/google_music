@@ -209,16 +209,6 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
               padding: const EdgeInsets.fromLTRB(20, 0, 12, 10),
               child: Row(
                 children: <Widget>[
-                  Icon(
-                    switch (widget.sheetType) {
-                      PlayerSheetType.upNext => Icons.queue_music_rounded,
-                      PlayerSheetType.lyrics => Icons.lyrics_rounded,
-                      PlayerSheetType.related => Icons.auto_awesome_rounded,
-                    },
-                    color: controller.dynamicAccentColor,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +246,10 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 28,
+                    ),
                     color: colorScheme.onSurfaceVariant,
                     tooltip: 'Close',
                     onPressed: () => Navigator.of(context).pop(),
@@ -270,22 +263,26 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
             ),
             Expanded(
               child: switch (widget.sheetType) {
-                PlayerSheetType.upNext =>
-                  _buildQueueTab(context, controller, theme, colorScheme),
+                PlayerSheetType.upNext => _buildQueueTab(
+                  context,
+                  controller,
+                  theme,
+                  colorScheme,
+                ),
                 PlayerSheetType.lyrics => _buildLyricsTab(
-                    context,
-                    controller,
-                    theme,
-                    colorScheme,
-                    currentSong,
-                  ),
+                  context,
+                  controller,
+                  theme,
+                  colorScheme,
+                  currentSong,
+                ),
                 PlayerSheetType.related => _buildRelatedTab(
-                    context,
-                    controller,
-                    theme,
-                    colorScheme,
-                    currentSong,
-                  ),
+                  context,
+                  controller,
+                  theme,
+                  colorScheme,
+                  currentSong,
+                ),
               },
             ),
           ],
@@ -362,7 +359,8 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
             buildDefaultDragHandles: false,
             itemCount: queue.length,
             onReorderItem: controller.reorderQueue,
-            footer: (!controller.isPlaylistQueue && controller.isFetchingAutoplay)
+            footer:
+                (!controller.isPlaylistQueue && controller.isFetchingAutoplay)
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
@@ -662,140 +660,145 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
               }
 
               return Stack(
-            children: <Widget>[
-              NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification is UserScrollNotification) {
-                    if (notification.direction != ScrollDirection.idle) {
-                      _userIsScrollingLyrics = true;
-                      _lyricsScrollResumeTimer?.cancel();
-                    } else {
-                      _lyricsScrollResumeTimer?.cancel();
-                      _lyricsScrollResumeTimer = Timer(
-                        const Duration(seconds: 4),
-                        () {
-                          if (mounted) {
+                children: <Widget>[
+                  NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification is UserScrollNotification) {
+                        if (notification.direction != ScrollDirection.idle) {
+                          _userIsScrollingLyrics = true;
+                          _lyricsScrollResumeTimer?.cancel();
+                        } else {
+                          _lyricsScrollResumeTimer?.cancel();
+                          _lyricsScrollResumeTimer = Timer(
+                            const Duration(seconds: 4),
+                            () {
+                              if (mounted) {
+                                setState(() {
+                                  _userIsScrollingLyrics = false;
+                                });
+                              }
+                            },
+                          );
+                        }
+                      }
+                      return false;
+                    },
+                    child: ListView.builder(
+                      controller: _lyricsScrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      itemCount: lyrics.syncedLines.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == lyrics.syncedLines.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 40, bottom: 28),
+                            child: Center(
+                              child: Text(
+                                'Lyrics provided by ${lyrics.source}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.5),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final line = lyrics.syncedLines[index];
+                        final isActive = index == activeIndex;
+
+                        return InkWell(
+                          onTap: () {
                             setState(() {
                               _userIsScrollingLyrics = false;
                             });
-                          }
-                        },
-                      );
-                    }
-                  }
-                  return false;
-                },
-                child: ListView.builder(
-                  controller: _lyricsScrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  itemCount: lyrics.syncedLines.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == lyrics.syncedLines.length) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 40, bottom: 28),
-                        child: Center(
-                          child: Text(
-                            'Lyrics provided by ${lyrics.source}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.5,
+                            controller.seek(line.timestamp);
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 250),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily:
+                                    theme.textTheme.bodyLarge?.fontFamily,
+                                fontSize: isActive ? 22 : 17,
+                                fontWeight: isActive
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: isActive
+                                    ? (theme.brightness == Brightness.dark
+                                          ? Colors.white
+                                          : colorScheme.onSurface)
+                                    : colorScheme.onSurfaceVariant.withValues(
+                                        alpha: line.isInstrumental
+                                            ? 0.25
+                                            : 0.45,
+                                      ),
+                                letterSpacing: line.isInstrumental ? 4.0 : 0.0,
+                                height: 1.45,
                               ),
-                              fontSize: 11,
+                              child: Align(
+                                alignment: Alignment.topLeft,
+                                child: Text(
+                                  line.text,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }
-
-                    final line = lyrics.syncedLines[index];
-                    final isActive = index == activeIndex;
-
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _userIsScrollingLyrics = false;
-                        });
-                        controller.seek(line.timestamp);
+                        );
                       },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 250),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: theme.textTheme.bodyLarge?.fontFamily,
-                            fontSize: isActive ? 22 : 17,
-                            fontWeight: isActive
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            color: isActive
-                                ? (theme.brightness == Brightness.dark
-                                      ? Colors.white
-                                      : colorScheme.onSurface)
-                                : colorScheme.onSurfaceVariant.withValues(
-                                    alpha: line.isInstrumental ? 0.25 : 0.45,
-                                  ),
-                            letterSpacing: line.isInstrumental ? 4.0 : 0.0,
-                            height: 1.45,
-                          ),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(line.text, textAlign: TextAlign.center),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              if (_userIsScrollingLyrics && activeIndex >= 0)
-                Positioned(
-                  right: 18,
-                  bottom: 18,
-                  child: FloatingActionButton.extended(
-                    onPressed: () {
-                      setState(() {
-                        _userIsScrollingLyrics = false;
-                      });
-                      if (_lyricsScrollController.hasClients) {
-                        final targetOffset = (activeIndex * 58.0) - 160.0;
-                        final clamped = targetOffset.clamp(
-                          0.0,
-                          _lyricsScrollController.position.maxScrollExtent,
-                        );
-                        _lyricsScrollController.animateTo(
-                          clamped,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                        );
-                      }
-                    },
-                    backgroundColor: theme.brightness == Brightness.dark
-                        ? const Color(0xFF2C2C2C)
-                        : colorScheme.surfaceContainerHighest,
-                    icon: Icon(
-                      Icons.sync_rounded,
-                      size: 18,
-                      color: controller.dynamicAccentColor,
-                    ),
-                    label: Text(
-                      'Sync',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
                     ),
                   ),
-                ),
-            ],
+                  if (_userIsScrollingLyrics && activeIndex >= 0)
+                    Positioned(
+                      right: 18,
+                      bottom: 18,
+                      child: FloatingActionButton.extended(
+                        onPressed: () {
+                          setState(() {
+                            _userIsScrollingLyrics = false;
+                          });
+                          if (_lyricsScrollController.hasClients) {
+                            final targetOffset = (activeIndex * 58.0) - 160.0;
+                            final clamped = targetOffset.clamp(
+                              0.0,
+                              _lyricsScrollController.position.maxScrollExtent,
+                            );
+                            _lyricsScrollController.animateTo(
+                              clamped,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOutCubic,
+                            );
+                          }
+                        },
+                        backgroundColor: theme.brightness == Brightness.dark
+                            ? const Color(0xFF2C2C2C)
+                            : colorScheme.surfaceContainerHighest,
+                        icon: Icon(
+                          Icons.sync_rounded,
+                          size: 18,
+                          color: controller.dynamicAccentColor,
+                        ),
+                        label: Text(
+                          'Sync',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           );
-        },
-      );
-    }
+        }
 
         /// Plain text lyrics fallback (e.g. YouTube Music official lyrics).
         return SingleChildScrollView(

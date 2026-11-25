@@ -6,6 +6,7 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../core/widgets/track_tile.dart';
 import '../../../models/playlist_model.dart';
+import '../../../models/song_model.dart';
 import '../../player/presentation/now_playing_sheet.dart';
 
 /// Detailed view for a custom user playlist displaying tracks, playback actions, and management controls.
@@ -108,68 +109,236 @@ class PlaylistDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${playlist.trackCount} songs',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        '${playlist.trackCount} songs',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (controller.isPlaylistFullyDownloaded(songs)) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.download_done_rounded,
+                          size: 14,
+                          color: accent,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Downloaded',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ] else if (controller.isPlaylistDownloading(songs)) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 11,
+                          height: 11,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.8,
+                            color: accent,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Downloading (${controller.getPlaylistDownloadedCount(songs)}/${songs.length})',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  if (songs.isNotEmpty)
+                  if (songs.isNotEmpty) ...<Widget>[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: accent,
-                            foregroundColor: accent.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                        Expanded(
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: accent,
+                              foregroundColor: accent.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                            label: const Text(
+                              'Play All',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
                             ),
+                            onPressed: () {
+                              controller.playPlaylist(playlist, shuffle: false);
+                              NowPlayingSheet.show(context);
+                            },
                           ),
-                          icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                          label: const Text(
-                            'Play All',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          onPressed: () {
-                            controller.playPlaylist(playlist, shuffle: false);
-                            NowPlayingSheet.show(context);
-                          },
                         ),
-                        const SizedBox(width: 12),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colorScheme.onSurface,
-                            side: BorderSide(
-                              color: colorScheme.outlineVariant,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colorScheme.onSurface,
+                              side: BorderSide(
+                                color: colorScheme.outlineVariant,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                            icon: const Icon(Icons.shuffle_rounded, size: 18),
+                            label: const Text(
+                              'Shuffle',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            onPressed: () {
+                              controller.playPlaylist(playlist, shuffle: true);
+                              NowPlayingSheet.show(context);
+                            },
                           ),
-                          icon: const Icon(Icons.shuffle_rounded, size: 20),
-                          label: const Text(
-                            'Shuffle',
-                            style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildDownloadAllButton(
+                            context: context,
+                            controller: controller,
+                            playlist: playlist,
+                            songs: songs,
+                            downloadedCount:
+                                controller.getPlaylistDownloadedCount(songs),
+                            isFullyDownloaded:
+                                controller.isPlaylistFullyDownloaded(songs),
+                            isDownloading:
+                                controller.isPlaylistDownloading(songs),
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            accent: accent,
                           ),
-                          onPressed: () {
-                            controller.playPlaylist(playlist, shuffle: true);
-                            NowPlayingSheet.show(context);
-                          },
                         ),
                       ],
                     ),
+                    if (controller.isPlaylistDownloading(songs)) ...<Widget>[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.7,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: accent.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: accent,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Downloading offline (${controller.getPlaylistDownloadedCount(songs)} of ${songs.length} saved)',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => _confirmCancelBatch(
+                                    context,
+                                    controller,
+                                    controller.getPlaylistDownloadedCount(songs),
+                                    songs.length,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        color: colorScheme.error,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: songs.isEmpty
+                                    ? 0.0
+                                    : (controller.getPlaylistDownloadedCount(
+                                                songs) /
+                                            songs.length)
+                                        .clamp(0.0, 1.0),
+                                minHeight: 4,
+                                backgroundColor: colorScheme.surfaceContainer,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  accent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),
@@ -408,6 +577,322 @@ class PlaylistDetailScreen extends StatelessWidget {
                 }
               },
               child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Builds the dynamic batch download button with matching height and responsive styling.
+  Widget _buildDownloadAllButton({
+    required BuildContext context,
+    required MusicPlayerController controller,
+    required PlaylistModel playlist,
+    required List<SongModel> songs,
+    required int downloadedCount,
+    required bool isFullyDownloaded,
+    required bool isDownloading,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required Color accent,
+  }) {
+    if (isFullyDownloaded) {
+      return FilledButton.tonalIcon(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent.withValues(alpha: 0.16),
+          foregroundColor: accent,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: Icon(Icons.download_done_rounded, size: 18, color: accent),
+        label: Text(
+          'Saved',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            color: accent,
+          ),
+        ),
+        onPressed: () => _showDownloadedOptionsSheet(
+          context,
+          controller,
+          playlist,
+          songs,
+          accent,
+        ),
+      );
+    }
+
+    if (isDownloading) {
+      return FilledButton.tonalIcon(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent.withValues(alpha: 0.12),
+          foregroundColor: accent,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: accent,
+          ),
+        ),
+        label: Text(
+          '$downloadedCount/${songs.length}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            color: accent,
+          ),
+        ),
+        onPressed: () => _confirmCancelBatch(
+          context,
+          controller,
+          downloadedCount,
+          songs.length,
+        ),
+      );
+    }
+
+    final remaining = songs.length - downloadedCount;
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: colorScheme.onSurface,
+        side: BorderSide(color: colorScheme.outlineVariant),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      icon: const Icon(Icons.download_rounded, size: 18),
+      label: Text(
+        downloadedCount > 0 ? '$remaining left' : 'Download',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+      ),
+      onPressed: () {
+        controller.downloadSongsBatch(songs);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              downloadedCount > 0
+                  ? 'Downloading $remaining remaining tracks in background...'
+                  : 'Downloading ${songs.length} tracks in background...',
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Displays modal options sheet when all playlist tracks are downloaded offline.
+  void _showDownloadedOptionsSheet(
+    BuildContext context,
+    MusicPlayerController controller,
+    PlaylistModel playlist,
+    List<SongModel> songs,
+    Color accent,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.download_done_rounded,
+                  color: accent,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Playlist Downloaded',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'All ${songs.length} tracks are saved on this device for offline playback.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: Icon(Icons.play_circle_fill_rounded, color: accent),
+                title: const Text(
+                  'Play Offline Now',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text('Plays cached files with zero data usage'),
+                onTap: () {
+                  Navigator.of(bottomSheetContext).pop();
+                  controller.playPlaylist(playlist, shuffle: false);
+                  NowPlayingSheet.show(context);
+                },
+              ),
+              const SizedBox(height: 6),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: Icon(
+                  Icons.delete_sweep_outlined,
+                  color: colorScheme.error,
+                ),
+                title: Text(
+                  'Remove Playlist Downloads',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: const Text('Frees device storage taken by these songs'),
+                onTap: () async {
+                  Navigator.of(bottomSheetContext).pop();
+                  final List<String> songIds =
+                      songs.map((SongModel s) => s.id).toList();
+                  await controller.removeDownloadsBatch(songIds);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Removed offline downloads for "${playlist.name}"',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Displays confirmation dialog to abort ongoing batch download queue.
+  void _confirmCancelBatch(
+    BuildContext context,
+    MusicPlayerController controller,
+    int downloadedCount,
+    int totalCount,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final accent = controller.dynamicAccentColor;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          icon: Icon(Icons.cancel_outlined, color: accent, size: 28),
+          title: const Text(
+            'Cancel Batch Download?',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Text(
+            '$downloadedCount of $totalCount songs are saved. Stopping now will cancel remaining songs in the download queue.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Keep Downloading',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                controller.cancelAllBatchDownloads();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Batch download cancelled'),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Cancel Download'),
             ),
           ],
         );
