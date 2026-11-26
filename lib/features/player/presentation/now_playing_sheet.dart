@@ -87,16 +87,60 @@ class NowPlayingSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                      IconButton(
+                      M3EIconButton(
+                        variant: M3EIconButtonVariant.filled,
+                        size: M3EIconButtonSize.sm,
+                        shape: M3EIconButtonShapeVariant.square,
+                        width: M3EIconButtonWidth.defaultWidth,
+                        haptic: M3EHapticFeedback.light,
+                        tooltip: controller.isSongDownloaded(song.id)
+                            ? 'Downloaded (Tap to remove)'
+                            : (controller.isSongDownloading(song.id)
+                                  ? 'Downloading in progress'
+                                  : 'Download for offline playback'),
+                        decoration: M3EIconButtonDecoration(
+                          backgroundColor: WidgetStateProperty.all(
+                            controller.isSongDownloaded(song.id)
+                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
+                                : (isDark
+                                      ? Color.alphaBlend(
+                                          accent.withValues(alpha: 0.14),
+                                          const Color(0xFF202020),
+                                        )
+                                      : Color.alphaBlend(
+                                          accent.withValues(alpha: 0.10),
+                                          const Color(0xFFECEEF4),
+                                        )),
+                          ),
+                          foregroundColor: WidgetStateProperty.all(
+                            controller.isSongDownloaded(song.id)
+                                ? accent
+                                : (isDark
+                                      ? Colors.white.withValues(alpha: 0.85)
+                                      : colorScheme.onSurface),
+                          ),
+                          side: WidgetStateProperty.all(
+                            BorderSide(
+                              color: controller.isSongDownloaded(song.id)
+                                  ? accent.withValues(
+                                      alpha: isDark ? 0.45 : 0.35,
+                                    )
+                                  : accent.withValues(
+                                      alpha: isDark ? 0.18 : 0.12,
+                                    ),
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
                         icon: controller.isSongDownloading(song.id)
                             ? SizedBox(
-                                width: 22,
-                                height: 22,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
                                   value: controller.getSongDownloadProgress(
                                     song.id,
                                   ),
-                                  strokeWidth: 2.5,
+                                  strokeWidth: 2.2,
                                   color: accent,
                                   backgroundColor: accent.withValues(
                                     alpha: 0.2,
@@ -107,16 +151,8 @@ class NowPlayingSheet extends StatelessWidget {
                                 controller.isSongDownloaded(song.id)
                                     ? Icons.download_done_rounded
                                     : Icons.download_for_offline_outlined,
-                                color: controller.isSongDownloaded(song.id)
-                                    ? accent
-                                    : colorScheme.onSurface,
-                                size: 25,
+                                size: 20,
                               ),
-                        tooltip: controller.isSongDownloaded(song.id)
-                            ? 'Downloaded (Tap to remove)'
-                            : (controller.isSongDownloading(song.id)
-                                  ? 'Downloading in progress'
-                                  : 'Download for offline playback'),
                         onPressed: () async {
                           if (controller.isSongDownloading(song.id)) {
                             return;
@@ -144,55 +180,133 @@ class NowPlayingSheet extends StatelessWidget {
                           }
                         },
                       ),
-                      IconButton(
+                      const SizedBox(width: 8),
+                      M3EIconButton(
+                        variant: M3EIconButtonVariant.filled,
+                        size: M3EIconButtonSize.sm,
+                        shape: M3EIconButtonShapeVariant.square,
+                        width: M3EIconButtonWidth.defaultWidth,
+                        haptic: M3EHapticFeedback.light,
+                        tooltip: controller.isSongLiked(song.id)
+                            ? 'Unlike'
+                            : 'Favorite',
+                        decoration: M3EIconButtonDecoration(
+                          backgroundColor: WidgetStateProperty.all(
+                            controller.isSongLiked(song.id)
+                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
+                                : (isDark
+                                      ? Color.alphaBlend(
+                                          accent.withValues(alpha: 0.14),
+                                          const Color(0xFF202020),
+                                        )
+                                      : Color.alphaBlend(
+                                          accent.withValues(alpha: 0.10),
+                                          const Color(0xFFECEEF4),
+                                        )),
+                          ),
+                          foregroundColor: WidgetStateProperty.all(
+                            controller.isSongLiked(song.id)
+                                ? accent
+                                : (isDark
+                                      ? Colors.white.withValues(alpha: 0.85)
+                                      : colorScheme.onSurface),
+                          ),
+                          side: WidgetStateProperty.all(
+                            BorderSide(
+                              color: controller.isSongLiked(song.id)
+                                  ? accent.withValues(
+                                      alpha: isDark ? 0.45 : 0.35,
+                                    )
+                                  : accent.withValues(
+                                      alpha: isDark ? 0.18 : 0.12,
+                                    ),
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
                         icon: Icon(
                           controller.isSongLiked(song.id)
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
-                          color: controller.isSongLiked(song.id)
-                              ? accent
-                              : colorScheme.onSurface,
-                          size: 25,
+                          size: 20,
                         ),
-                        tooltip: 'Favorite',
                         onPressed: () => controller.toggleLike(song),
                       ),
-                      IconButton(
+                      const SizedBox(width: 8),
+                      M3EIconButton(
+                        variant: M3EIconButtonVariant.filled,
+                        size: M3EIconButtonSize.sm,
+                        shape: M3EIconButtonShapeVariant.square,
+                        width: M3EIconButtonWidth.defaultWidth,
+                        haptic: M3EHapticFeedback.light,
+                        tooltip: controller.isSleepTimerActive
+                            ? 'Sleep Timer Active'
+                            : 'Sleep Timer',
+                        decoration: M3EIconButtonDecoration(
+                          backgroundColor: WidgetStateProperty.all(
+                            controller.isSleepTimerActive
+                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
+                                : (isDark
+                                      ? Color.alphaBlend(
+                                          accent.withValues(alpha: 0.14),
+                                          const Color(0xFF202020),
+                                        )
+                                      : Color.alphaBlend(
+                                          accent.withValues(alpha: 0.10),
+                                          const Color(0xFFECEEF4),
+                                        )),
+                          ),
+                          foregroundColor: WidgetStateProperty.all(
+                            controller.isSleepTimerActive
+                                ? accent
+                                : (isDark
+                                      ? Colors.white.withValues(alpha: 0.85)
+                                      : colorScheme.onSurface),
+                          ),
+                          side: WidgetStateProperty.all(
+                            BorderSide(
+                              color: controller.isSleepTimerActive
+                                  ? accent.withValues(
+                                      alpha: isDark ? 0.45 : 0.35,
+                                    )
+                                  : accent.withValues(
+                                      alpha: isDark ? 0.18 : 0.12,
+                                    ),
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
                         icon: Stack(
                           clipBehavior: Clip.none,
+                          alignment: Alignment.center,
                           children: <Widget>[
                             Icon(
                               controller.isSleepTimerActive
                                   ? Icons.bedtime_rounded
                                   : Icons.bedtime_outlined,
-                              color: controller.isSleepTimerActive
-                                  ? accent
-                                  : colorScheme.onSurface,
-                              size: 24,
+                              size: 20,
                             ),
                             if (controller.isSleepTimerActive)
                               Positioned(
-                                right: -1,
-                                top: -1,
+                                right: -2,
+                                top: -2,
                                 child: Container(
-                                  width: 7,
-                                  height: 7,
+                                  width: 6,
+                                  height: 6,
                                   decoration: BoxDecoration(
                                     color: accent,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color:
-                                          isDark ? Colors.black : Colors.white,
-                                      width: 1.5,
+                                      color: isDark
+                                          ? Colors.black
+                                          : Colors.white,
+                                      width: 1.2,
                                     ),
                                   ),
                                 ),
                               ),
                           ],
                         ),
-                        tooltip: controller.isSleepTimerActive
-                            ? 'Sleep Timer Active'
-                            : 'Sleep Timer',
                         onPressed: () => SleepTimerSheet.show(context),
                       ),
                     ],
@@ -239,16 +353,9 @@ class NowPlayingSheet extends StatelessWidget {
                         ValueListenableBuilder<Duration>(
                           valueListenable: controller.positionNotifier,
                           builder: (context, currentPosition, child) {
-                            final effectiveDuration = controller.duration > Duration.zero
-                                ? controller.duration
-                                : (song.parsedDuration ?? Duration.zero);
-                            final safePosition = effectiveDuration > Duration.zero &&
-                                    currentPosition > effectiveDuration
-                                ? effectiveDuration
-                                : currentPosition;
                             return WavySlider(
-                              position: safePosition,
-                              duration: effectiveDuration,
+                              position: currentPosition,
+                              duration: controller.duration,
                               isPlaying: controller.isPlaying,
                               activeColor: accent,
                               inactiveColor: isDark
@@ -352,22 +459,29 @@ class NowPlayingSheet extends StatelessWidget {
                         type: M3EButtonGroupType.connected,
                         shape: M3EButtonShape.round,
                         size: M3EButtonSize.sm,
-                        style: M3EButtonStyle.tonal,
+                        style: M3EButtonStyle.filled,
                         neighborSquish: true,
                         decoration: M3EButtonDecoration(
                           backgroundColor: WidgetStateProperty.all(
                             isDark
-                                ? const Color(0xFF212121)
-                                : const Color(0xFFE9ECF1),
+                                ? Color.alphaBlend(
+                                    accent.withValues(alpha: 0.18),
+                                    const Color(0xFF1E1E1E),
+                                  )
+                                : Color.alphaBlend(
+                                    accent.withValues(alpha: 0.12),
+                                    const Color(0xFFE8EAF2),
+                                  ),
                           ),
                           foregroundColor: WidgetStateProperty.all(
                             isDark ? Colors.white : const Color(0xFF191C1E),
                           ),
                           side: WidgetStateProperty.all(
                             BorderSide(
-                              color: isDark
-                                  ? const Color(0xFF333333)
-                                  : const Color(0xFFD6DAE2),
+                              color: accent.withValues(
+                                alpha: isDark ? 0.24 : 0.18,
+                              ),
+                              width: 1.0,
                             ),
                           ),
                         ),
