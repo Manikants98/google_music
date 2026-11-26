@@ -92,6 +92,9 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
   /// Timer to resume auto-scrolling lyrics after manual user interaction ceases.
   Timer? _lyricsScrollResumeTimer;
 
+  /// GlobalKeys for each synced lyric line to enable exact viewport centering without offset drift.
+  final Map<int, GlobalKey> _lyricLineKeys = <int, GlobalKey>{};
+
   @override
   void initState() {
     super.initState();
@@ -146,6 +149,8 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
       _cachedSongId = song.id;
       _lastSyncedIndex = -1;
       _userIsScrollingLyrics = false;
+      _lyricLineKeys.clear();
+      _lyricsScrollResumeTimer?.cancel();
       if (widget.sheetType == PlayerSheetType.lyrics) {
         _lyricsFuture = controller.lyricsService.getLyrics(song);
       } else if (widget.sheetType == PlayerSheetType.related) {
@@ -530,6 +535,101 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
     );
   }
 
+  /// Smoothly scrolls the active lyric line to approximately 35% from the top of the viewport.
+  void _scrollToActiveLine(
+    int index, {
+    Duration duration = const Duration(milliseconds: 350),
+  }) {
+    if (!mounted || !_lyricsScrollController.hasClients) return;
+    final key = _lyricLineKeys[index];
+    final lineContext = key?.currentContext;
+    if (lineContext != null) {
+      Scrollable.ensureVisible(
+        lineContext,
+        alignment: 0.35,
+        duration: duration,
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      /// If context is pending initial layout, schedule on the following frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_lyricsScrollController.hasClients) return;
+        final retryContext = _lyricLineKeys[index]?.currentContext;
+        if (retryContext != null) {
+          Scrollable.ensureVisible(
+            retryContext,
+            alignment: 0.35,
+            duration: duration,
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    }
+  }
+
+  /// Builds a single synchronized lyrics line with distinct active, past, and upcoming styling.
+  Widget _buildSyncedLineItem(
+    BuildContext context,
+    MusicPlayerController controller,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    SyncedLyricLine line,
+    int index,
+    int activeIndex,
+  ) {
+    final isActive = index == activeIndex;
+    final isPast = index < activeIndex;
+
+    return Container(
+      key: _lyricLineKeys.putIfAbsent(index, () => GlobalKey()),
+      child: InkWell(
+        onTap: () {
+          _lyricsScrollResumeTimer?.cancel();
+          setState(() {
+            _userIsScrollingLyrics = false;
+          });
+          controller.seek(line.timestamp);
+          _scrollToActiveLine(index);
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 250),
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              fontFamily: theme.textTheme.bodyLarge?.fontFamily,
+              fontSize: isActive ? 22 : 17,
+              fontWeight: isActive
+                  ? FontWeight.w800
+                  : (isPast ? FontWeight.w600 : FontWeight.w500),
+              color: isActive
+                  ? (theme.brightness == Brightness.dark
+                        ? Colors.white
+                        : colorScheme.onSurface)
+                  : (isPast
+                        ? (theme.brightness == Brightness.dark
+                              ? Colors.white.withValues(alpha: 0.65)
+                              : colorScheme.onSurface.withValues(alpha: 0.6))
+                        : colorScheme.onSurfaceVariant.withValues(
+                            alpha: line.isInstrumental ? 0.25 : 0.35,
+                          )),
+              letterSpacing: line.isInstrumental ? 4.0 : 0.0,
+              height: 1.45,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                line.text,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds the dynamic Lyrics tab with synchronized karaoke scrolling and tap-to-seek.
   Widget _buildLyricsTab(
     BuildContext context,
@@ -639,60 +739,64 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                 }
               }
 
-              if (!_userIsScrollingLyrics &&
-                  activeIndex != _lastSyncedIndex &&
-                  activeIndex >= 0) {
+              if (activeIndex >= 0 && activeIndex != _lastSyncedIndex) {
                 _lastSyncedIndex = activeIndex;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_lyricsScrollController.hasClients) {
-                    final targetOffset = (activeIndex * 58.0) - 160.0;
-                    final clamped = targetOffset.clamp(
-                      0.0,
-                      _lyricsScrollController.position.maxScrollExtent,
-                    );
-                    _lyricsScrollController.animateTo(
-                      clamped,
-                      duration: const Duration(milliseconds: 350),
-                      curve: Curves.easeOutCubic,
-                    );
-                  }
-                });
+                if (!_userIsScrollingLyrics) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToActiveLine(activeIndex);
+                  });
+                }
               }
 
               return Stack(
                 children: <Widget>[
                   NotificationListener<ScrollNotification>(
                     onNotification: (notification) {
-                      if (notification is UserScrollNotification) {
-                        if (notification.direction != ScrollDirection.idle) {
-                          _userIsScrollingLyrics = true;
-                          _lyricsScrollResumeTimer?.cancel();
-                        } else {
-                          _lyricsScrollResumeTimer?.cancel();
-                          _lyricsScrollResumeTimer = Timer(
-                            const Duration(seconds: 4),
-                            () {
-                              if (mounted) {
-                                setState(() {
-                                  _userIsScrollingLyrics = false;
-                                });
+                      if (notification is ScrollStartNotification &&
+                          notification.dragDetails != null) {
+                        _userIsScrollingLyrics = true;
+                        _lyricsScrollResumeTimer?.cancel();
+                      } else if (notification is UserScrollNotification &&
+                          notification.direction == ScrollDirection.idle) {
+                        _lyricsScrollResumeTimer?.cancel();
+                        _lyricsScrollResumeTimer = Timer(
+                          const Duration(seconds: 4),
+                          () {
+                            if (mounted) {
+                              setState(() {
+                                _userIsScrollingLyrics = false;
+                              });
+                              if (_lastSyncedIndex >= 0) {
+                                _scrollToActiveLine(_lastSyncedIndex);
                               }
-                            },
-                          );
-                        }
+                            }
+                          },
+                        );
                       }
                       return false;
                     },
-                    child: ListView.builder(
+                    child: SingleChildScrollView(
                       controller: _lyricsScrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
                       ),
-                      itemCount: lyrics.syncedLines.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == lyrics.syncedLines.length) {
-                          return Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 100, 24, 300),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          for (int index = 0;
+                              index < lyrics.syncedLines.length;
+                              index++)
+                            _buildSyncedLineItem(
+                              context,
+                              controller,
+                              theme,
+                              colorScheme,
+                              lyrics.syncedLines[index],
+                              index,
+                              activeIndex,
+                            ),
+                          Padding(
                             padding: const EdgeInsets.only(top: 40, bottom: 28),
                             child: Center(
                               child: Text(
@@ -704,55 +808,9 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                                 ),
                               ),
                             ),
-                          );
-                        }
-
-                        final line = lyrics.syncedLines[index];
-                        final isActive = index == activeIndex;
-
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _userIsScrollingLyrics = false;
-                            });
-                            controller.seek(line.timestamp);
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 250),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily:
-                                    theme.textTheme.bodyLarge?.fontFamily,
-                                fontSize: isActive ? 22 : 17,
-                                fontWeight: isActive
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
-                                color: isActive
-                                    ? (theme.brightness == Brightness.dark
-                                          ? Colors.white
-                                          : colorScheme.onSurface)
-                                    : colorScheme.onSurfaceVariant.withValues(
-                                        alpha: line.isInstrumental
-                                            ? 0.25
-                                            : 0.45,
-                                      ),
-                                letterSpacing: line.isInstrumental ? 4.0 : 0.0,
-                                height: 1.45,
-                              ),
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: Text(
-                                  line.text,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
                   ),
                   if (_userIsScrollingLyrics && activeIndex >= 0)
@@ -761,20 +819,12 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                       bottom: 18,
                       child: FloatingActionButton.extended(
                         onPressed: () {
+                          _lyricsScrollResumeTimer?.cancel();
                           setState(() {
                             _userIsScrollingLyrics = false;
                           });
-                          if (_lyricsScrollController.hasClients) {
-                            final targetOffset = (activeIndex * 58.0) - 160.0;
-                            final clamped = targetOffset.clamp(
-                              0.0,
-                              _lyricsScrollController.position.maxScrollExtent,
-                            );
-                            _lyricsScrollController.animateTo(
-                              clamped,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                            );
+                          if (activeIndex >= 0) {
+                            _scrollToActiveLine(activeIndex);
                           }
                         },
                         backgroundColor: theme.brightness == Brightness.dark
