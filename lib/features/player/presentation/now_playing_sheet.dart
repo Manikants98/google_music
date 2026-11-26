@@ -239,9 +239,16 @@ class NowPlayingSheet extends StatelessWidget {
                         ValueListenableBuilder<Duration>(
                           valueListenable: controller.positionNotifier,
                           builder: (context, currentPosition, child) {
+                            final effectiveDuration = controller.duration > Duration.zero
+                                ? controller.duration
+                                : (song.parsedDuration ?? Duration.zero);
+                            final safePosition = effectiveDuration > Duration.zero &&
+                                    currentPosition > effectiveDuration
+                                ? effectiveDuration
+                                : currentPosition;
                             return WavySlider(
-                              position: currentPosition,
-                              duration: controller.duration,
+                              position: safePosition,
+                              duration: effectiveDuration,
                               isPlaying: controller.isPlaying,
                               activeColor: accent,
                               inactiveColor: isDark

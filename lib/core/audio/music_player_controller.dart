@@ -50,6 +50,9 @@ class MusicPlayerController extends ChangeNotifier {
   /// Monotonic session counter to prevent race conditions during rapid track switching.
   int _sessionToken = 0;
 
+  /// Whether an asynchronous track transition is in flight to guard against stale player events.
+  bool _isSwitchingTrack = false;
+
   /// Currently loaded song track.
   SongModel? _currentSong;
 
@@ -435,12 +438,7 @@ class MusicPlayerController extends ChangeNotifier {
   /// Listens to internal player stream updates.
   void _initPlayerListeners() {
     _playerSubscription = _player.playerStateStream.listen((state) {
-      if (_status == PlayerStatus.loading) {
-        if (state.processingState == ja.ProcessingState.ready) {
-          _status = state.playing ? PlayerStatus.playing : PlayerStatus.paused;
-          _syncAudioNotification();
-          notifyListeners();
-        }
+      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
         return;
       }
 
@@ -464,24 +462,36 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.positionStream.listen((pos) {
-      _position = pos;
-      positionNotifier.value = pos;
+      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
+        return;
+      }
+
+      final effectiveDuration = _duration > Duration.zero
+          ? _duration
+          : (_currentSong?.parsedDuration ?? Duration.zero);
+      final clampedPos =
+          effectiveDuration > Duration.zero && pos > effectiveDuration
+              ? effectiveDuration
+              : pos;
+
+      _position = clampedPos;
+      positionNotifier.value = clampedPos;
       if (_duration == Duration.zero && _currentSong?.parsedDuration != null) {
         _duration = _currentSong!.parsedDuration!;
       }
       if (_currentSong != null) {
         behaviorTracker.recordSongPlaybackProgress(
           _currentSong!,
-          pos,
+          clampedPos,
           duration,
         );
       }
-      if (pos.inSeconds > 0 && pos.inSeconds % 5 == 0) {
+      if (clampedPos.inSeconds > 0 && clampedPos.inSeconds % 5 == 0) {
         _syncAudioNotification();
       }
       if (_duration > Duration.zero &&
-          (_duration - pos).inSeconds <= 35 &&
-          pos.inSeconds % 10 == 0) {
+          (_duration - clampedPos).inSeconds <= 35 &&
+          clampedPos.inSeconds % 10 == 0) {
         if (!_isPlaylistQueue) {
           unawaited(ensureAutoplayQueue());
         }
@@ -492,6 +502,7 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.durationStream.listen((dur) {
+      if (_isSwitchingTrack) return;
       if (dur != null && dur > Duration.zero) {
         _duration = dur;
         if (_currentSong != null) {
@@ -509,6 +520,9 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.bufferedPositionStream.listen((buf) {
+      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
+        return;
+      }
       _bufferedPosition = buf;
       bufferedPositionNotifier.value = buf;
     });
@@ -516,6 +530,11 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Handles automatic track advancement upon completion.
   void _onTrackCompleted() async {
+    if (_isSwitchingTrack || _status == PlayerStatus.loading) {
+      return;
+    }
+    _isSwitchingTrack = true;
+
     if (_currentSong != null) {
       behaviorTracker.recordSongCompleted(_currentSong!);
     }
@@ -523,6 +542,7 @@ class MusicPlayerController extends ChangeNotifier {
     if (_sleepTimerEndOfTrack) {
       _cancelSleepTimerInternal();
       await pause();
+      _isSwitchingTrack = false;
       notifyListeners();
       return;
     }
@@ -530,6 +550,7 @@ class MusicPlayerController extends ChangeNotifier {
     if (_loopMode == LoopMode.one) {
       await seek(Duration.zero);
       await resume();
+      _isSwitchingTrack = false;
       return;
     }
 
@@ -544,6 +565,7 @@ class MusicPlayerController extends ChangeNotifier {
     } else {
       _status = PlayerStatus.paused;
       await seek(Duration.zero);
+      _isSwitchingTrack = false;
       _syncAudioNotification();
       notifyListeners();
     }
@@ -556,6 +578,7 @@ class MusicPlayerController extends ChangeNotifier {
     bool? isPlaylistQueue,
   }) async {
     final currentSession = ++_sessionToken;
+    _isSwitchingTrack = true;
 
     if (isPlaylistQueue != null) {
       _isPlaylistQueue = isPlaylistQueue;
@@ -619,6 +642,9 @@ class MusicPlayerController extends ChangeNotifier {
 
     try {
       await _player.stop();
+      try {
+        await _player.seek(Duration.zero);
+      } catch (_) {}
 
       bool loadedSuccessfully = false;
       Object? lastError;
@@ -717,6 +743,7 @@ class MusicPlayerController extends ChangeNotifier {
       }
 
       await _player.play();
+      _isSwitchingTrack = false;
       _status = PlayerStatus.playing;
       _syncAudioNotification();
       notifyListeners();
@@ -724,8 +751,14 @@ class MusicPlayerController extends ChangeNotifier {
       _prefetchUpcomingStreams();
     } catch (e) {
       if (currentSession != _sessionToken) return;
+      _isSwitchingTrack = false;
+      _position = Duration.zero;
+      positionNotifier.value = Duration.zero;
+      _bufferedPosition = Duration.zero;
+      bufferedPositionNotifier.value = Duration.zero;
       _status = PlayerStatus.error;
       _errorMessage = 'Playback failure: $e';
+      _syncAudioNotification();
       notifyListeners();
     }
   }
@@ -774,9 +807,9 @@ class MusicPlayerController extends ChangeNotifier {
     }
   }
 
-  /// Plays previous track or restarts current track if elapsed past 3 seconds.
-  Future<void> playPrevious() async {
-    if (_position.inSeconds > 3) {
+  /// Plays previous track or restarts current track if elapsed past 3 seconds (unless forcePrevious is true).
+  Future<void> playPrevious({bool forcePrevious = false}) async {
+    if (!forcePrevious && _position.inSeconds > 3) {
       await seek(Duration.zero);
       return;
     }
