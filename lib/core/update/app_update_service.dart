@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +18,7 @@ class AppUpdateService {
   static const String githubRepo = 'google_music';
 
   /// Active application semantic version name.
-  static const String currentAppVersion = '1.0.3';
+  static const String currentAppVersion = '1.0.4';
 
   /// Cached version string initialized from package or fallback.
   static String _cachedVersion = currentAppVersion;
@@ -32,14 +32,16 @@ class AppUpdateService {
   }
 
   /// Platform channel communicating with Android native package installer and version metadata.
-  static const MethodChannel _channel =
-      MethodChannel('com.mkx.google_music/download_notification');
+  static const MethodChannel _channel = MethodChannel(
+    'com.mkx.google_music/download_notification',
+  );
 
   /// Retrieves the active version name from Android package manager or cached fallback.
   static Future<String> getAppVersion() async {
     try {
-      final String? version =
-          await _channel.invokeMethod<String>('getAppVersion');
+      final String? version = await _channel.invokeMethod<String>(
+        'getAppVersion',
+      );
       if (version != null && version.isNotEmpty) {
         _cachedVersion = version;
         return version;
@@ -57,8 +59,9 @@ class AppUpdateService {
     final parts1 = clean1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     final parts2 = clean2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
 
-    final maxLen =
-        parts1.length > parts2.length ? parts1.length : parts2.length;
+    final maxLen = parts1.length > parts2.length
+        ? parts1.length
+        : parts2.length;
     for (int i = 0; i < maxLen; i++) {
       final p1 = i < parts1.length ? parts1[i] : 0;
       final p2 = i < parts2.length ? parts2[i] : 0;
@@ -75,13 +78,15 @@ class AppUpdateService {
         'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest',
       );
 
-      final response = await http.get(
-        uri,
-        headers: const <String, String>{
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'GoogleMusic-AppUpdater',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            uri,
+            headers: const <String, String>{
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'GoogleMusic-AppUpdater',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
         return null;
@@ -94,15 +99,22 @@ class AppUpdateService {
 
       final tagName = (decoded['tag_name'] ?? '').toString();
       final title = (decoded['name'] ?? tagName).toString();
-      final body = (decoded['body'] ?? 'Performance improvements and bug fixes.')
-          .toString();
+      final body =
+          (decoded['body'] ?? 'Performance improvements and bug fixes.')
+              .toString();
       final rawPublished = decoded['published_at']?.toString();
-      final publishedAt =
-          rawPublished != null ? DateTime.tryParse(rawPublished) : null;
+      final publishedAt = rawPublished != null
+          ? DateTime.tryParse(rawPublished)
+          : null;
 
       final currentVer = await getAppVersion();
       final isNewer = compareVersions(tagName, currentVer) > 0;
       if (!isNewer) {
+        return null;
+      }
+
+      if (Platform.isIOS) {
+        // On iOS, APK packages cannot be installed.
         return null;
       }
 
@@ -150,7 +162,7 @@ class AppUpdateService {
   static Future<bool> downloadAndInstall({
     required AppUpdateInfo updateInfo,
     required void Function(double progress, int downloadedBytes, int totalBytes)
-        onProgress,
+    onProgress,
   }) async {
     http.Client? client;
     try {
@@ -160,8 +172,9 @@ class AppUpdateService {
         await updateDir.create(recursive: true);
       }
 
-      final apkFile =
-          File('${updateDir.path}/google_music_${updateInfo.version}.apk');
+      final apkFile = File(
+        '${updateDir.path}/google_music_${updateInfo.version}.apk',
+      );
       if (await apkFile.exists()) {
         await apkFile.delete();
       }
@@ -194,9 +207,10 @@ class AppUpdateService {
 
       onProgress(1.0, receivedBytes, totalBytes);
 
-      final result = await _channel.invokeMethod<bool>('installApk', <String, Object>{
-        'filePath': apkFile.path,
-      });
+      final result = await _channel.invokeMethod<bool>(
+        'installApk',
+        <String, Object>{'filePath': apkFile.path},
+      );
 
       return result == true;
     } catch (e) {

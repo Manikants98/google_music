@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Animated splash screen for Google Music displaying brand logo and audio waveform.
 class GoogleMusicSplashScreen extends StatefulWidget {

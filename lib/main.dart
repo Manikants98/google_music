@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/material.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -23,6 +24,9 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 /// Entry point for Google Music Flutter application.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final session = await AudioSession.instance;
+  await session.configure(const AudioSessionConfiguration.music());
 
   DownloadNotificationService.initialize(rootNavigatorKey);
 
@@ -78,10 +82,8 @@ class GoogleMusicApp extends StatelessWidget {
     return ChangeNotifierProvider<MusicPlayerController>.value(
       value: controller,
       child: Selector<MusicPlayerController, ({ThemeMode mode, Color accent})>(
-        selector: (_, music) => (
-          mode: music.themeMode,
-          accent: music.dynamicAccentColor,
-        ),
+        selector: (_, music) =>
+            (mode: music.themeMode, accent: music.dynamicAccentColor),
         builder: (context, themeProps, child) {
           final font = GoogleFonts.plusJakartaSans().fontFamily;
 
