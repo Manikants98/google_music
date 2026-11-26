@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/audio/music_player_controller.dart';
 import '../../../core/offline/download_notification_service.dart';
 import '../../../core/update/app_update_service.dart';
+import '../../player/presentation/sleep_timer_sheet.dart';
 
 /// Item descriptor for a settings action row.
 class _SettingsItem {
@@ -196,6 +197,48 @@ class SettingsScreen extends StatelessWidget {
                   color: accent,
                   size: 20,
                 ),
+              ),
+              _SettingsItem(
+                icon: Icons.bedtime_outlined,
+                title: 'Sleep Timer',
+                subtitle: controller.isSleepTimerActive
+                    ? (controller.isSleepTimerEndOfTrack
+                        ? 'Active • Stops at end of track'
+                        : 'Active • Scheduled shutdown')
+                    : 'Turn off music automatically when you sleep',
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (controller.isSleepTimerActive) ...<Widget>[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'ON',
+                          style: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                onTap: () => SleepTimerSheet.show(context),
               ),
             ],
           ),

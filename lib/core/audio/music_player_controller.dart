@@ -124,6 +124,32 @@ class MusicPlayerController extends ChangeNotifier {
   final ValueNotifier<Duration> bufferedPositionNotifier =
       ValueNotifier<Duration>(Duration.zero);
 
+  /// Active sleep timer target timestamp.
+  DateTime? _sleepTimerTarget;
+
+  /// Whether sleep timer is configured to stop playback at end of current track.
+  bool _sleepTimerEndOfTrack = false;
+
+  /// Underlying sleep timer instance.
+  Timer? _sleepTimer;
+
+  /// One-second interval ticker for updating sleep timer remaining duration.
+  Timer? _sleepTicker;
+
+  /// Fine-grained notifier broadcasting remaining sleep timer duration.
+  final ValueNotifier<Duration?> sleepTimerRemainingNotifier =
+      ValueNotifier<Duration?>(null);
+
+  /// Target timestamp when active sleep timer will trigger.
+  DateTime? get sleepTimerTarget => _sleepTimerTarget;
+
+  /// Whether sleep timer is currently active.
+  bool get isSleepTimerActive =>
+      _sleepTimerTarget != null || _sleepTimerEndOfTrack;
+
+  /// Whether active sleep timer pauses at end of current track.
+  bool get isSleepTimerEndOfTrack => _sleepTimerEndOfTrack;
+
   /// Error message when playback fails.
   String? _errorMessage;
 
@@ -492,6 +518,13 @@ class MusicPlayerController extends ChangeNotifier {
   void _onTrackCompleted() async {
     if (_currentSong != null) {
       behaviorTracker.recordSongCompleted(_currentSong!);
+    }
+
+    if (_sleepTimerEndOfTrack) {
+      _cancelSleepTimerInternal();
+      await pause();
+      notifyListeners();
+      return;
     }
 
     if (_loopMode == LoopMode.one) {
@@ -1206,6 +1239,93 @@ class MusicPlayerController extends ChangeNotifier {
     }
   }
 
+  /// Sets a sleep timer for [duration] with a gentle volume fade out before pausing.
+  void setSleepTimer(Duration duration) {
+    _cancelSleepTimerInternal();
+
+    _sleepTimerTarget = DateTime.now().add(duration);
+    sleepTimerRemainingNotifier.value = duration;
+
+    _sleepTicker = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+      final target = _sleepTimerTarget;
+      if (target == null) {
+        timer.cancel();
+        return;
+      }
+      final remaining = target.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        timer.cancel();
+        sleepTimerRemainingNotifier.value = Duration.zero;
+      } else {
+        sleepTimerRemainingNotifier.value = remaining;
+      }
+    });
+
+    final fadeDuration = duration > const Duration(seconds: 6)
+        ? const Duration(seconds: 4)
+        : Duration.zero;
+    final delayBeforeFade = duration > fadeDuration
+        ? duration - fadeDuration
+        : Duration.zero;
+
+    _sleepTimer = Timer(delayBeforeFade, () {
+      _fadeOutAndPause();
+    });
+
+    notifyListeners();
+  }
+
+  /// Sets sleep timer to pause playback at the conclusion of the currently playing track.
+  void setSleepTimerEndOfTrack() {
+    _cancelSleepTimerInternal();
+    _sleepTimerEndOfTrack = true;
+    notifyListeners();
+  }
+
+  /// Cancels any active sleep timer and restores full audio volume.
+  void cancelSleepTimer() {
+    _cancelSleepTimerInternal();
+    notifyListeners();
+  }
+
+  /// Gradually reduces volume to 0.0 before pausing to avoid startling the listener awake.
+  Future<void> _fadeOutAndPause() async {
+    try {
+      const steps = 8;
+      const stepInterval = Duration(milliseconds: 350);
+      for (int i = steps - 1; i >= 0; i--) {
+        if (!isSleepTimerActive) break;
+        await _player.setVolume(i / steps);
+        await Future<void>.delayed(stepInterval);
+      }
+      if (isSleepTimerActive) {
+        await pause();
+      }
+    } catch (_) {
+      await pause();
+    } finally {
+      _cancelSleepTimerInternal();
+      try {
+        await _player.setVolume(1.0);
+      } catch (_) {}
+      notifyListeners();
+    }
+  }
+
+  /// Internal cleanup for active timers without triggering listeners.
+  void _cancelSleepTimerInternal() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepTicker?.cancel();
+    _sleepTicker = null;
+    _sleepTimerTarget = null;
+    _sleepTimerEndOfTrack = false;
+    sleepTimerRemainingNotifier.value = null;
+    try {
+      _player.setVolume(1.0);
+    } catch (_) {}
+  }
+
   /// Loads persisted liked songs from disk into memory.
   Future<void> _loadLikedSongs() async {
     final file = _likedSongsFile;
@@ -1367,6 +1487,9 @@ class MusicPlayerController extends ChangeNotifier {
     _offlineService?.removeListener(notifyListeners);
     _playlistService?.removeListener(notifyListeners);
     _playerSubscription?.cancel();
+    _sleepTimer?.cancel();
+    _sleepTicker?.cancel();
+    sleepTimerRemainingNotifier.dispose();
     _player.dispose();
     _extractor.close();
     positionNotifier.dispose();

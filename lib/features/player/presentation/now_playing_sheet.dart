@@ -7,6 +7,7 @@ import '../../../core/widgets/m3e_widgets.dart';
 import '../../../core/widgets/wavy_slider.dart';
 import '../../../models/playback_state.dart';
 import 'queue_bottom_sheet.dart';
+import 'sleep_timer_sheet.dart';
 
 /// Full screen immersive Google Music player with responsive dynamic layout and wavy soundwave slider.
 class NowPlayingSheet extends StatelessWidget {
@@ -155,6 +156,44 @@ class NowPlayingSheet extends StatelessWidget {
                         ),
                         tooltip: 'Favorite',
                         onPressed: () => controller.toggleLike(song),
+                      ),
+                      IconButton(
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: <Widget>[
+                            Icon(
+                              controller.isSleepTimerActive
+                                  ? Icons.bedtime_rounded
+                                  : Icons.bedtime_outlined,
+                              color: controller.isSleepTimerActive
+                                  ? accent
+                                  : colorScheme.onSurface,
+                              size: 24,
+                            ),
+                            if (controller.isSleepTimerActive)
+                              Positioned(
+                                right: -1,
+                                top: -1,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: accent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color:
+                                          isDark ? Colors.black : Colors.white,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        tooltip: controller.isSleepTimerActive
+                            ? 'Sleep Timer Active'
+                            : 'Sleep Timer',
+                        onPressed: () => SleepTimerSheet.show(context),
                       ),
                     ],
                   ),

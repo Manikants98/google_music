@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/music_player_controller.dart';
+import '../../features/player/presentation/sleep_timer_sheet.dart';
 import '../../features/playlist/presentation/add_to_playlist_sheet.dart';
 import '../../models/song_model.dart';
 import 'm3e_widgets.dart';
@@ -38,7 +39,7 @@ class TrackOptionsSheet extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: SafeArea(
         top: false,
         child: Column(
@@ -157,6 +158,22 @@ class TrackOptionsSheet extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pop();
                 controller.toggleLike(song);
+              },
+            ),
+            _buildOptionTile(
+              context: context,
+              icon: controller.isSleepTimerActive
+                  ? Icons.bedtime_rounded
+                  : Icons.bedtime_outlined,
+              title: 'Sleep Timer',
+              subtitle: controller.isSleepTimerActive
+                  ? 'Active • Tap to view or change'
+                  : 'Stop music automatically',
+              accent: controller.isSleepTimerActive ? accent : null,
+              colorScheme: colorScheme,
+              onTap: () {
+                Navigator.of(context).pop();
+                SleepTimerSheet.show(context);
               },
             ),
           ],
