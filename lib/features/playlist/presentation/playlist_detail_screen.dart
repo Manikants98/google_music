@@ -23,6 +23,7 @@ class PlaylistDetailScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final controller = context.watch<MusicPlayerController>();
     final accent = controller.dynamicAccentColor;
+    final isDark = theme.brightness == Brightness.dark;
 
     final playlist = controller.playlists.cast<PlaylistModel?>().firstWhere(
           (PlaylistModel? p) => p?.id == playlistId,
@@ -174,84 +175,161 @@ class PlaylistDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   if (songs.isNotEmpty) ...<Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: accent,
-                              foregroundColor: accent.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                            label: const Text(
-                              'Play All',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                            onPressed: () {
+                    Builder(
+                      builder: (context) {
+                        final downloadedCount =
+                            controller.getPlaylistDownloadedCount(songs);
+                        final isFullyDownloaded =
+                            controller.isPlaylistFullyDownloaded(songs);
+                        final isDownloading =
+                            controller.isPlaylistDownloading(songs);
+                        final remaining = songs.length - downloadedCount;
+
+                        return M3EButtonGroup(
+                          type: M3EButtonGroupType.standard,
+                          shape: M3EButtonShape.round,
+                          size: M3EButtonSize.sm,
+                          style: M3EButtonStyle.filled,
+                          neighborSquish: false,
+                          onSelectedIndexChanged: (int? index) {
+                            if (index == 0) {
                               controller.playPlaylist(playlist, shuffle: false);
                               NowPlayingSheet.show(context);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: colorScheme.onSurface,
-                              side: BorderSide(
-                                color: colorScheme.outlineVariant,
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.shuffle_rounded, size: 18),
-                            label: const Text(
-                              'Shuffle',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                            onPressed: () {
+                            } else if (index == 1) {
                               controller.playPlaylist(playlist, shuffle: true);
                               NowPlayingSheet.show(context);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildDownloadAllButton(
-                            context: context,
-                            controller: controller,
-                            playlist: playlist,
-                            songs: songs,
-                            downloadedCount:
-                                controller.getPlaylistDownloadedCount(songs),
-                            isFullyDownloaded:
-                                controller.isPlaylistFullyDownloaded(songs),
-                            isDownloading:
-                                controller.isPlaylistDownloading(songs),
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            accent: accent,
-                          ),
-                        ),
-                      ],
+                            } else if (index == 2) {
+                              if (isFullyDownloaded) {
+                                _showDownloadedOptionsSheet(
+                                  context,
+                                  controller,
+                                  playlist,
+                                  songs,
+                                  accent,
+                                );
+                              } else if (isDownloading) {
+                                _confirmCancelBatch(
+                                  context,
+                                  controller,
+                                  downloadedCount,
+                                  songs.length,
+                                );
+                              } else {
+                                controller.downloadSongsBatch(songs);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      downloadedCount > 0
+                                          ? 'Downloading $remaining remaining tracks in background...'
+                                          : 'Downloading ${songs.length} tracks in background...',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          actions: <M3EButtonGroupAction>[
+                            M3EButtonGroupAction(
+                              icon: const Icon(
+                                Icons.play_arrow_rounded,
+                                size: 20,
+                              ),
+                              label: const Text('Play All'),
+                              decoration: M3EButtonDecoration(
+                                backgroundColor:
+                                    WidgetStateProperty.all(accent),
+                                foregroundColor: WidgetStateProperty.all(
+                                  accent.computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
+                            M3EButtonGroupAction(
+                              icon: const Icon(
+                                Icons.shuffle_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Shuffle'),
+                              decoration: M3EButtonDecoration(
+                                backgroundColor: WidgetStateProperty.all(
+                                  isDark
+                                      ? const Color(0xFF1E1E1E)
+                                      : const Color(0xFFF0F1F5),
+                                ),
+                                foregroundColor: WidgetStateProperty.all(
+                                  colorScheme.onSurface,
+                                ),
+                                side: WidgetStateProperty.all(
+                                  BorderSide(
+                                    color: colorScheme.outlineVariant
+                                        .withValues(alpha: 0.5),
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            M3EButtonGroupAction(
+                              icon: isDownloading
+                                  ? SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: accent,
+                                      ),
+                                    )
+                                  : Icon(
+                                      isFullyDownloaded
+                                          ? Icons.download_done_rounded
+                                          : Icons.download_rounded,
+                                      size: 18,
+                                      color: isFullyDownloaded ? accent : null,
+                                    ),
+                              label: Text(
+                                isFullyDownloaded
+                                    ? 'Saved'
+                                    : (isDownloading
+                                          ? '$downloadedCount/${songs.length}'
+                                          : (downloadedCount > 0
+                                                ? '$remaining left'
+                                                : 'Download')),
+                                style: TextStyle(
+                                  color: isFullyDownloaded ? accent : null,
+                                ),
+                              ),
+                              decoration: M3EButtonDecoration(
+                                backgroundColor: WidgetStateProperty.all(
+                                  isFullyDownloaded
+                                      ? accent.withValues(alpha: 0.16)
+                                      : (isDark
+                                            ? const Color(0xFF1E1E1E)
+                                            : const Color(0xFFF0F1F5)),
+                                ),
+                                foregroundColor: WidgetStateProperty.all(
+                                  isFullyDownloaded
+                                      ? accent
+                                      : colorScheme.onSurface,
+                                ),
+                                side: WidgetStateProperty.all(
+                                  isFullyDownloaded
+                                      ? BorderSide.none
+                                      : BorderSide(
+                                          color: colorScheme.outlineVariant
+                                              .withValues(alpha: 0.5),
+                                          width: 1.0,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                     if (controller.isPlaylistDownloading(songs)) ...<Widget>[
                       const SizedBox(height: 12),
@@ -579,124 +657,6 @@ class PlaylistDetailScreen extends StatelessWidget {
               child: const Text('Delete'),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  /// Builds the dynamic batch download button with matching height and responsive styling.
-  Widget _buildDownloadAllButton({
-    required BuildContext context,
-    required MusicPlayerController controller,
-    required PlaylistModel playlist,
-    required List<SongModel> songs,
-    required int downloadedCount,
-    required bool isFullyDownloaded,
-    required bool isDownloading,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-    required Color accent,
-  }) {
-    if (isFullyDownloaded) {
-      return FilledButton.tonalIcon(
-        style: FilledButton.styleFrom(
-          backgroundColor: accent.withValues(alpha: 0.16),
-          foregroundColor: accent,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        icon: Icon(Icons.download_done_rounded, size: 18, color: accent),
-        label: Text(
-          'Saved',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-            color: accent,
-          ),
-        ),
-        onPressed: () => _showDownloadedOptionsSheet(
-          context,
-          controller,
-          playlist,
-          songs,
-          accent,
-        ),
-      );
-    }
-
-    if (isDownloading) {
-      return FilledButton.tonalIcon(
-        style: FilledButton.styleFrom(
-          backgroundColor: accent.withValues(alpha: 0.12),
-          foregroundColor: accent,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        icon: SizedBox(
-          width: 14,
-          height: 14,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: accent,
-          ),
-        ),
-        label: Text(
-          '$downloadedCount/${songs.length}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-            color: accent,
-          ),
-        ),
-        onPressed: () => _confirmCancelBatch(
-          context,
-          controller,
-          downloadedCount,
-          songs.length,
-        ),
-      );
-    }
-
-    final remaining = songs.length - downloadedCount;
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: colorScheme.onSurface,
-        side: BorderSide(color: colorScheme.outlineVariant),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(
-        downloadedCount > 0 ? '$remaining left' : 'Download',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-      ),
-      onPressed: () {
-        controller.downloadSongsBatch(songs);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              downloadedCount > 0
-                  ? 'Downloading $remaining remaining tracks in background...'
-                  : 'Downloading ${songs.length} tracks in background...',
-            ),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
         );
       },
     );
