@@ -73,7 +73,7 @@ class NowPlayingSheet extends StatelessWidget {
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(52),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
