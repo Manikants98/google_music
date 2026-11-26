@@ -489,8 +489,12 @@ class MusicPlayerController extends ChangeNotifier {
       if (clampedPos.inSeconds > 0 && clampedPos.inSeconds % 5 == 0) {
         _syncAudioNotification();
       }
+      /// Pre-fetch upcoming streams at 10s and 30s so the next track is cached early in the background.
+      if (clampedPos.inSeconds == 10 || clampedPos.inSeconds == 30) {
+        _prefetchUpcomingStreams();
+      }
       if (_duration > Duration.zero &&
-          (_duration - clampedPos).inSeconds <= 35 &&
+          (_duration - clampedPos).inSeconds <= 45 &&
           clampedPos.inSeconds % 10 == 0) {
         if (!_isPlaylistQueue) {
           unawaited(ensureAutoplayQueue());
@@ -641,10 +645,11 @@ class MusicPlayerController extends ChangeNotifier {
     _extractDynamicColors(song.thumbnailUrl);
 
     try {
-      await _player.stop();
-      try {
-        await _player.seek(Duration.zero);
-      } catch (_) {}
+      if (_status == PlayerStatus.playing) {
+        try {
+          await _player.pause();
+        } catch (_) {}
+      }
 
       bool loadedSuccessfully = false;
       Object? lastError;
@@ -760,6 +765,14 @@ class MusicPlayerController extends ChangeNotifier {
       _errorMessage = 'Playback failure: $e';
       _syncAudioNotification();
       notifyListeners();
+
+      /// If track fails during background playback, automatically advance to next track.
+      if (_queue.isNotEmpty && _currentIndex + 1 < _queue.length) {
+        debugPrint(
+          '[MusicPlayer] Track ${song.title} failed, advancing to next track: $e',
+        );
+        unawaited(playNext());
+      }
     }
   }
 
@@ -1085,12 +1098,21 @@ class MusicPlayerController extends ChangeNotifier {
   void _prefetchUpcomingStreams() {
     if (_queue.isEmpty) return;
     final nextIndex = _currentIndex + 1;
-    final count = min(2, _queue.length - nextIndex);
+    if (nextIndex >= _queue.length) return;
+    final count = min(3, _queue.length - nextIndex);
     for (int i = 0; i < count; i++) {
       final upcomingSong = _queue[nextIndex + i];
       if (upcomingSong.audioStreamUrl == null ||
           upcomingSong.audioStreamUrl!.isEmpty) {
-        unawaited(_extractor.prefetch(upcomingSong.id));
+        unawaited(() async {
+          try {
+            final candidates =
+                await _extractor.getCandidateStreamUrls(upcomingSong.id);
+            if (candidates.isNotEmpty) {
+              upcomingSong.audioStreamUrl = candidates.first;
+            }
+          } catch (_) {}
+        }());
       }
     }
   }
@@ -1116,8 +1138,11 @@ class MusicPlayerController extends ChangeNotifier {
         break;
     }
 
+    final bool isActuallyPlaying = _status == PlayerStatus.playing ||
+        (_isSwitchingTrack && _status == PlayerStatus.loading);
+
     audioHandler!.updateState(
-      isPlaying: _status == PlayerStatus.playing,
+      isPlaying: isActuallyPlaying,
       processingState: processing,
       position: _position,
       bufferedPosition: _bufferedPosition,
