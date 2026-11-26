@@ -1,15 +1,15 @@
 {
   "name": "Google Music",
-  "identifier": "com.mkx.google_music.source",
+  "identifier": "com.mkx.googleMusic.source",
   "apps": [
     {
       "name": "Google Music",
       "bundleIdentifier": "com.mkx.googleMusic",
       "developerName": "Mani Kant",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "versionDate": "2026-11-26",
       "versionDescription": "Background playback, lock screen player, and native download notifications.",
-      "downloadURL": "https://github.com/Manikants98/google_music/releases/download/v1.0.4/google_music.ipa",
+      "downloadURL": "https://github.com/Manikants98/google_music/releases/download/v1.0.5/google_music.ipa",
       "localizedDescription": "Modern high performance music streaming app with offline support.",
       "iconURL": "https://raw.githubusercontent.com/Manikants98/google_music/main/assets/icons/dark/google_music_dark_rounded_square_1024x1024.png",
       "tintColor": "#FF4E4E",

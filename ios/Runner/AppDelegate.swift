@@ -84,7 +84,7 @@ import UserNotifications
         result(nil)
 
       case "getAppVersion":
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5"
         result(version)
 
       default:
