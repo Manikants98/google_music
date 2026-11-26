@@ -98,40 +98,6 @@ class NowPlayingSheet extends StatelessWidget {
                             : (controller.isSongDownloading(song.id)
                                   ? 'Downloading in progress'
                                   : 'Download for offline playback'),
-                        decoration: M3EIconButtonDecoration(
-                          backgroundColor: WidgetStateProperty.all(
-                            controller.isSongDownloaded(song.id)
-                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
-                                : (isDark
-                                      ? Color.alphaBlend(
-                                          accent.withValues(alpha: 0.14),
-                                          const Color(0xFF202020),
-                                        )
-                                      : Color.alphaBlend(
-                                          accent.withValues(alpha: 0.10),
-                                          const Color(0xFFECEEF4),
-                                        )),
-                          ),
-                          foregroundColor: WidgetStateProperty.all(
-                            controller.isSongDownloaded(song.id)
-                                ? accent
-                                : (isDark
-                                      ? Colors.white.withValues(alpha: 0.85)
-                                      : colorScheme.onSurface),
-                          ),
-                          side: WidgetStateProperty.all(
-                            BorderSide(
-                              color: controller.isSongDownloaded(song.id)
-                                  ? accent.withValues(
-                                      alpha: isDark ? 0.45 : 0.35,
-                                    )
-                                  : accent.withValues(
-                                      alpha: isDark ? 0.18 : 0.12,
-                                    ),
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
                         icon: controller.isSongDownloading(song.id)
                             ? SizedBox(
                                 width: 18,
@@ -151,6 +117,9 @@ class NowPlayingSheet extends StatelessWidget {
                                 controller.isSongDownloaded(song.id)
                                     ? Icons.download_done_rounded
                                     : Icons.download_for_offline_outlined,
+                                color: controller.isSongDownloaded(song.id)
+                                    ? accent
+                                    : null,
                                 size: 20,
                               ),
                         onPressed: () async {
@@ -190,44 +159,13 @@ class NowPlayingSheet extends StatelessWidget {
                         tooltip: controller.isSongLiked(song.id)
                             ? 'Unlike'
                             : 'Favorite',
-                        decoration: M3EIconButtonDecoration(
-                          backgroundColor: WidgetStateProperty.all(
-                            controller.isSongLiked(song.id)
-                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
-                                : (isDark
-                                      ? Color.alphaBlend(
-                                          accent.withValues(alpha: 0.14),
-                                          const Color(0xFF202020),
-                                        )
-                                      : Color.alphaBlend(
-                                          accent.withValues(alpha: 0.10),
-                                          const Color(0xFFECEEF4),
-                                        )),
-                          ),
-                          foregroundColor: WidgetStateProperty.all(
-                            controller.isSongLiked(song.id)
-                                ? accent
-                                : (isDark
-                                      ? Colors.white.withValues(alpha: 0.85)
-                                      : colorScheme.onSurface),
-                          ),
-                          side: WidgetStateProperty.all(
-                            BorderSide(
-                              color: controller.isSongLiked(song.id)
-                                  ? accent.withValues(
-                                      alpha: isDark ? 0.45 : 0.35,
-                                    )
-                                  : accent.withValues(
-                                      alpha: isDark ? 0.18 : 0.12,
-                                    ),
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
                         icon: Icon(
                           controller.isSongLiked(song.id)
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
+                          color: controller.isSongLiked(song.id)
+                              ? accent
+                              : null,
                           size: 20,
                         ),
                         onPressed: () => controller.toggleLike(song),
@@ -242,40 +180,6 @@ class NowPlayingSheet extends StatelessWidget {
                         tooltip: controller.isSleepTimerActive
                             ? 'Sleep Timer Active'
                             : 'Sleep Timer',
-                        decoration: M3EIconButtonDecoration(
-                          backgroundColor: WidgetStateProperty.all(
-                            controller.isSleepTimerActive
-                                ? accent.withValues(alpha: isDark ? 0.28 : 0.20)
-                                : (isDark
-                                      ? Color.alphaBlend(
-                                          accent.withValues(alpha: 0.14),
-                                          const Color(0xFF202020),
-                                        )
-                                      : Color.alphaBlend(
-                                          accent.withValues(alpha: 0.10),
-                                          const Color(0xFFECEEF4),
-                                        )),
-                          ),
-                          foregroundColor: WidgetStateProperty.all(
-                            controller.isSleepTimerActive
-                                ? accent
-                                : (isDark
-                                      ? Colors.white.withValues(alpha: 0.85)
-                                      : colorScheme.onSurface),
-                          ),
-                          side: WidgetStateProperty.all(
-                            BorderSide(
-                              color: controller.isSleepTimerActive
-                                  ? accent.withValues(
-                                      alpha: isDark ? 0.45 : 0.35,
-                                    )
-                                  : accent.withValues(
-                                      alpha: isDark ? 0.18 : 0.12,
-                                    ),
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
                         icon: Stack(
                           clipBehavior: Clip.none,
                           alignment: Alignment.center,
@@ -284,6 +188,9 @@ class NowPlayingSheet extends StatelessWidget {
                               controller.isSleepTimerActive
                                   ? Icons.bedtime_rounded
                                   : Icons.bedtime_outlined,
+                              color: controller.isSleepTimerActive
+                                  ? accent
+                                  : null,
                               size: 20,
                             ),
                             if (controller.isSleepTimerActive)
