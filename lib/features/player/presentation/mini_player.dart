@@ -23,28 +23,23 @@ class MiniPlayerPill extends StatefulWidget {
 
 class _MiniPlayerPillState extends State<MiniPlayerPill>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _resetAnimController;
-  late Animation<double> _dragAnimation;
-  double _dragX = 0.0;
-  double _dragY = 0.0;
+  late final AnimationController _slideAnimController;
+  final ValueNotifier<double> _dragNotifier = ValueNotifier<double>(0.0);
+  double _rawDragY = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _resetAnimController = AnimationController(
+    _slideAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 280),
-    )..addListener(() {
-        setState(() {
-          _dragX = _dragAnimation.value;
-        });
-      });
-    _dragAnimation = const AlwaysStoppedAnimation<double>(0.0);
+      duration: const Duration(milliseconds: 220),
+    );
   }
 
   @override
   void dispose() {
-    _resetAnimController.dispose();
+    _slideAnimController.dispose();
+    _dragNotifier.dispose();
     super.dispose();
   }
 
@@ -53,15 +48,87 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     NowPlayingSheet.show(context);
   }
 
-  /// Smoothly animates drag displacement back to resting position.
+  /// Smoothly animates drag displacement back to resting 0.0 position.
   void _animateReset() {
-    _dragAnimation = Tween<double>(begin: _dragX, end: 0.0).animate(
+    if (_slideAnimController.isAnimating) {
+      _slideAnimController.stop();
+    }
+    final startX = _dragNotifier.value;
+    final animation = Tween<double>(begin: startX, end: 0.0).animate(
       CurvedAnimation(
-        parent: _resetAnimController,
+        parent: _slideAnimController,
         curve: Curves.easeOutCubic,
       ),
     );
-    _resetAnimController.forward(from: 0.0);
+    void listener() {
+      _dragNotifier.value = animation.value;
+    }
+
+    animation.addListener(listener);
+    _slideAnimController.forward(from: 0.0).then((_) {
+      animation.removeListener(listener);
+      _dragNotifier.value = 0.0;
+    });
+  }
+
+  /// Performs fluid slide-out and slide-in transition upon track skip.
+  Future<void> _animateSlideAndChange(
+    MusicPlayerController controller, {
+    required bool isNext,
+  }) async {
+    if (_slideAnimController.isAnimating) {
+      _slideAnimController.stop();
+    }
+    final currentX = _dragNotifier.value;
+    final targetExitX = isNext ? -120.0 : 120.0;
+    final enterStartX = isNext ? 120.0 : -120.0;
+
+    /// 1. Smoothly finish sliding out in swipe direction
+    final exitAnimation =
+        Tween<double>(begin: currentX, end: targetExitX).animate(
+      CurvedAnimation(
+        parent: _slideAnimController,
+        curve: Curves.easeOutQuad,
+      ),
+    );
+    void exitListener() {
+      _dragNotifier.value = exitAnimation.value;
+    }
+
+    exitAnimation.addListener(exitListener);
+    await _slideAnimController.animateTo(
+      1.0,
+      duration: const Duration(milliseconds: 90),
+    );
+    exitAnimation.removeListener(exitListener);
+
+    /// 2. Trigger skip
+    if (isNext) {
+      controller.playNext();
+    } else {
+      controller.playPrevious();
+    }
+
+    /// 3. Reposition to opposite side and slide in
+    _dragNotifier.value = enterStartX;
+    final enterAnimation =
+        Tween<double>(begin: enterStartX, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _slideAnimController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    void enterListener() {
+      _dragNotifier.value = enterAnimation.value;
+    }
+
+    enterAnimation.addListener(enterListener);
+    await _slideAnimController.animateTo(
+      1.0,
+      duration: const Duration(milliseconds: 180),
+    );
+    enterAnimation.removeListener(enterListener);
+    _dragNotifier.value = 0.0;
   }
 
   @override
@@ -77,44 +144,50 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     final colorScheme = theme.colorScheme;
     final accent = controller.dynamicAccentColor;
 
-    final double contentOpacity =
-        (1.0 - (_dragX.abs() / 140.0)).clamp(0.4, 1.0);
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 5),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _openNowPlaying(context),
-        onHorizontalDragUpdate: (DragUpdateDetails details) {
-          if (_resetAnimController.isAnimating) {
-            _resetAnimController.stop();
+        onHorizontalDragStart: (DragStartDetails details) {
+          if (_slideAnimController.isAnimating) {
+            _slideAnimController.stop();
           }
-          setState(() {
-            _dragX += details.delta.dx * 0.75;
-            _dragX = _dragX.clamp(-75.0, 75.0);
-          });
+        },
+        onHorizontalDragUpdate: (DragUpdateDetails details) {
+          /// 1:1 responsive tracking with subtle damping at limits
+          double current = _dragNotifier.value + details.delta.dx;
+          if (current > 70.0) {
+            current = 70.0 + (current - 70.0) * 0.25;
+          } else if (current < -70.0) {
+            current = -70.0 + (current + 70.0) * 0.25;
+          }
+          _dragNotifier.value = current.clamp(-90.0, 90.0);
         },
         onHorizontalDragEnd: (DragEndDetails details) {
           final velocity = details.primaryVelocity ?? 0.0;
-          if (_dragX < -28 || velocity < -250) {
+          final currentX = _dragNotifier.value;
+
+          if (currentX < -32.0 || velocity < -350.0) {
             HapticFeedback.mediumImpact();
-            controller.playNext();
-          } else if (_dragX > 28 || velocity > 250) {
+            _animateSlideAndChange(controller, isNext: true);
+          } else if (currentX > 32.0 || velocity > 350.0) {
             HapticFeedback.mediumImpact();
-            controller.playPrevious();
+            _animateSlideAndChange(controller, isNext: false);
+          } else {
+            _animateReset();
           }
-          _animateReset();
         },
         onVerticalDragUpdate: (DragUpdateDetails details) {
-          _dragY += details.delta.dy;
+          _rawDragY += details.delta.dy;
         },
         onVerticalDragEnd: (DragEndDetails details) {
           final velocity = details.primaryVelocity ?? 0.0;
-          if (_dragY < -24 || velocity < -180) {
+          if (_rawDragY < -24.0 || velocity < -200.0) {
             HapticFeedback.lightImpact();
             _openNowPlaying(context);
           }
-          _dragY = 0.0;
+          _rawDragY = 0.0;
         },
         child: Container(
           height: 58,
@@ -140,50 +213,58 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                   child: Row(
                     children: <Widget>[
                       Expanded(
-                        child: Transform.translate(
-                          offset: Offset(_dragX, 0),
-                          child: Opacity(
-                            opacity: contentOpacity,
-                            child: Row(
-                              children: <Widget>[
-                                M3EAlbumArt(
-                                  imageUrl: song.thumbnailUrl,
-                                  size: 42,
-                                  radius: 4,
-                                  elevation: 0,
+                        child: ValueListenableBuilder<double>(
+                          valueListenable: _dragNotifier,
+                          builder: (context, dragX, child) {
+                            final double opacity =
+                                (1.0 - (dragX.abs() / 130.0)).clamp(0.25, 1.0);
+                            return Transform.translate(
+                              offset: Offset(dragX, 0),
+                              child: Opacity(
+                                opacity: opacity,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Row(
+                            children: <Widget>[
+                              M3EAlbumArt(
+                                imageUrl: song.thumbnailUrl,
+                                size: 42,
+                                radius: 4,
+                                elevation: 0,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    M3EMarqueeText(
+                                      text: song.title,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      song.artist,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                colorScheme.onSurfaceVariant,
+                                            fontSize: 11,
+                                          ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      M3EMarqueeText(
-                                        text: song.title,
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 13,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        song.artist,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                              fontSize: 11,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
