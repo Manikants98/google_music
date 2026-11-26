@@ -68,11 +68,11 @@ class NowPlayingSheet extends StatelessWidget {
           top: true,
           bottom: true,
           child: Padding(
-            padding: const EdgeInsets.only(top: 20),
+            padding: const EdgeInsets.only(top: 50),
             child: Scaffold(
               backgroundColor: Colors.transparent,
               appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
+                preferredSize: const Size.fromHeight(50),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -89,7 +89,7 @@ class NowPlayingSheet extends StatelessWidget {
                         ),
                       ),
                       M3EIconButton(
-                        variant: M3EIconButtonVariant.filled,
+                        variant: M3EIconButtonVariant.tonal,
                         size: M3EIconButtonSize.sm,
                         shape: M3EIconButtonShapeVariant.square,
                         width: M3EIconButtonWidth.defaultWidth,
@@ -103,15 +103,16 @@ class NowPlayingSheet extends StatelessWidget {
                             ? SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(
+                                child: M3EProgressIndicator.circular(
                                   value: controller.getSongDownloadProgress(
                                     song.id,
                                   ),
-                                  strokeWidth: 2.2,
-                                  color: accent,
-                                  backgroundColor: accent.withValues(
+                                  strokeWidth: 2,
+                                  trackStrokeWidth: 2,
+                                  trackColor: colorScheme.onSurface.withValues(
                                     alpha: 0.2,
                                   ),
+                                  color: accent,
                                 ),
                               )
                             : Icon(
@@ -150,9 +151,9 @@ class NowPlayingSheet extends StatelessWidget {
                           }
                         },
                       ),
-                      const SizedBox(width: 8),
+
                       M3EIconButton(
-                        variant: M3EIconButtonVariant.filled,
+                        variant: M3EIconButtonVariant.tonal,
                         size: M3EIconButtonSize.sm,
                         shape: M3EIconButtonShapeVariant.square,
                         width: M3EIconButtonWidth.defaultWidth,
@@ -171,9 +172,9 @@ class NowPlayingSheet extends StatelessWidget {
                         ),
                         onPressed: () => controller.toggleLike(song),
                       ),
-                      const SizedBox(width: 8),
+
                       M3EIconButton(
-                        variant: M3EIconButtonVariant.filled,
+                        variant: M3EIconButtonVariant.tonal,
                         size: M3EIconButtonSize.sm,
                         shape: M3EIconButtonShapeVariant.square,
                         width: M3EIconButtonWidth.defaultWidth,
@@ -199,17 +200,11 @@ class NowPlayingSheet extends StatelessWidget {
                                 right: -2,
                                 top: -2,
                                 child: Container(
-                                  width: 6,
-                                  height: 6,
+                                  width: 5,
+                                  height: 5,
                                   decoration: BoxDecoration(
                                     color: accent,
                                     shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isDark
-                                          ? Colors.black
-                                          : Colors.white,
-                                      width: 1.2,
-                                    ),
                                   ),
                                 ),
                               ),
@@ -318,7 +313,7 @@ class NowPlayingSheet extends StatelessWidget {
                                   ? SizedBox(
                                       width: 28,
                                       height: 28,
-                                      child: M3EProgressIndicator.circular(
+                                      child: M3EProgressIndicator.circularWavy(
                                         strokeWidth: 3.0,
                                         trackStrokeWidth: 3.0,
                                         color: accent.computeLuminance() > 0.45
@@ -429,9 +424,7 @@ class NowPlayingSheet extends StatelessWidget {
         final topRadius = 12.0 * (1.0 - progress);
 
         return ClipRRect(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(topRadius),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(topRadius)),
           child: child,
         );
       },

@@ -106,7 +106,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     if (isNext) {
       controller.playNext();
     } else {
-      controller.playPrevious(forcePrevious: true);
+      controller.playPrevious();
     }
 
     /// 3. Reposition to opposite side and slide in
@@ -303,14 +303,9 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                   child: ValueListenableBuilder<Duration>(
                     valueListenable: controller.positionNotifier,
                     builder: (context, pos, child) {
-                      final dur = controller.duration > Duration.zero
-                          ? controller.duration
-                          : (song.parsedDuration ?? Duration.zero);
-                      final safePos =
-                          dur > Duration.zero && pos > dur ? dur : pos;
+                      final dur = controller.duration;
                       final progress = dur.inMilliseconds > 0
-                          ? (safePos.inMilliseconds / dur.inMilliseconds)
-                              .clamp(0.0, 1.0)
+                          ? (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0)
                           : 0.0;
                       return LinearProgressIndicator(
                         value: progress,

@@ -23,12 +23,11 @@ class PlaylistDetailScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final controller = context.watch<MusicPlayerController>();
     final accent = controller.dynamicAccentColor;
-    final isDark = theme.brightness == Brightness.dark;
 
     final playlist = controller.playlists.cast<PlaylistModel?>().firstWhere(
-          (PlaylistModel? p) => p?.id == playlistId,
-          orElse: () => null,
-        );
+      (PlaylistModel? p) => p?.id == playlistId,
+      orElse: () => null,
+    );
 
     if (playlist == null) {
       return Scaffold(
@@ -54,7 +53,8 @@ class PlaylistDetailScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded),
             tooltip: 'Delete Playlist',
-            onPressed: () => _confirmDeletePlaylist(context, controller, playlist),
+            onPressed: () =>
+                _confirmDeletePlaylist(context, controller, playlist),
           ),
           const SizedBox(width: 8),
         ],
@@ -119,7 +119,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      if (controller.isPlaylistFullyDownloaded(songs)) ...<Widget>[
+                      if (controller.isPlaylistFullyDownloaded(
+                        songs,
+                      )) ...<Widget>[
                         const SizedBox(width: 8),
                         Text(
                           '•',
@@ -143,7 +145,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ] else if (controller.isPlaylistDownloading(songs)) ...<Widget>[
+                      ] else if (controller.isPlaylistDownloading(
+                        songs,
+                      )) ...<Widget>[
                         const SizedBox(width: 8),
                         Text(
                           '•',
@@ -177,19 +181,19 @@ class PlaylistDetailScreen extends StatelessWidget {
                   if (songs.isNotEmpty) ...<Widget>[
                     Builder(
                       builder: (context) {
-                        final downloadedCount =
-                            controller.getPlaylistDownloadedCount(songs);
-                        final isFullyDownloaded =
-                            controller.isPlaylistFullyDownloaded(songs);
-                        final isDownloading =
-                            controller.isPlaylistDownloading(songs);
+                        final downloadedCount = controller
+                            .getPlaylistDownloadedCount(songs);
+                        final isFullyDownloaded = controller
+                            .isPlaylistFullyDownloaded(songs);
+                        final isDownloading = controller.isPlaylistDownloading(
+                          songs,
+                        );
                         final remaining = songs.length - downloadedCount;
 
                         return M3EButtonGroup(
-                          type: M3EButtonGroupType.standard,
-                          shape: M3EButtonShape.round,
+                          type: M3EButtonGroupType.connected,
                           size: M3EButtonSize.sm,
-                          style: M3EButtonStyle.filled,
+                          style: M3EButtonStyle.tonal,
                           neighborSquish: false,
                           onSelectedIndexChanged: (int? index) {
                             if (index == 0) {
@@ -241,8 +245,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                               ),
                               label: const Text('Play All'),
                               decoration: M3EButtonDecoration(
-                                backgroundColor:
-                                    WidgetStateProperty.all(accent),
                                 foregroundColor: WidgetStateProperty.all(
                                   accent.computeLuminance() > 0.5
                                       ? Colors.black
@@ -251,28 +253,8 @@ class PlaylistDetailScreen extends StatelessWidget {
                               ),
                             ),
                             M3EButtonGroupAction(
-                              icon: const Icon(
-                                Icons.shuffle_rounded,
-                                size: 18,
-                              ),
+                              icon: const Icon(Icons.shuffle_rounded, size: 18),
                               label: const Text('Shuffle'),
-                              decoration: M3EButtonDecoration(
-                                backgroundColor: WidgetStateProperty.all(
-                                  isDark
-                                      ? const Color(0xFF1E1E1E)
-                                      : const Color(0xFFF0F1F5),
-                                ),
-                                foregroundColor: WidgetStateProperty.all(
-                                  colorScheme.onSurface,
-                                ),
-                                side: WidgetStateProperty.all(
-                                  BorderSide(
-                                    color: colorScheme.outlineVariant
-                                        .withValues(alpha: 0.5),
-                                    width: 1.0,
-                                  ),
-                                ),
-                              ),
                             ),
                             M3EButtonGroupAction(
                               icon: isDownloading
@@ -307,23 +289,12 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 backgroundColor: WidgetStateProperty.all(
                                   isFullyDownloaded
                                       ? accent.withValues(alpha: 0.16)
-                                      : (isDark
-                                            ? const Color(0xFF1E1E1E)
-                                            : const Color(0xFFF0F1F5)),
+                                      : null,
                                 ),
                                 foregroundColor: WidgetStateProperty.all(
                                   isFullyDownloaded
                                       ? accent
                                       : colorScheme.onSurface,
-                                ),
-                                side: WidgetStateProperty.all(
-                                  isFullyDownloaded
-                                      ? BorderSide.none
-                                      : BorderSide(
-                                          color: colorScheme.outlineVariant
-                                              .withValues(alpha: 0.5),
-                                          width: 1.0,
-                                        ),
                                 ),
                               ),
                             ),
@@ -375,7 +346,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                                   onTap: () => _confirmCancelBatch(
                                     context,
                                     controller,
-                                    controller.getPlaylistDownloadedCount(songs),
+                                    controller.getPlaylistDownloadedCount(
+                                      songs,
+                                    ),
                                     songs.length,
                                   ),
                                   child: Padding(
@@ -402,9 +375,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 value: songs.isEmpty
                                     ? 0.0
                                     : (controller.getPlaylistDownloadedCount(
-                                                songs) /
-                                            songs.length)
-                                        .clamp(0.0, 1.0),
+                                                songs,
+                                              ) /
+                                              songs.length)
+                                          .clamp(0.0, 1.0),
                                 minHeight: 4,
                                 backgroundColor: colorScheme.surfaceContainer,
                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -433,7 +407,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                       Icon(
                         Icons.music_off_rounded,
                         size: 56,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -526,9 +502,14 @@ class PlaylistDetailScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: const Text(
             'Rename Playlist',
             textAlign: TextAlign.center,
@@ -599,9 +580,14 @@ class PlaylistDetailScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           icon: Icon(Icons.delete_outline_rounded, color: accent, size: 28),
           title: Text(
             'Delete "${playlist.name}"?',
@@ -757,11 +743,14 @@ class PlaylistDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: const Text('Frees device storage taken by these songs'),
+                subtitle: const Text(
+                  'Frees device storage taken by these songs',
+                ),
                 onTap: () async {
                   Navigator.of(bottomSheetContext).pop();
-                  final List<String> songIds =
-                      songs.map((SongModel s) => s.id).toList();
+                  final List<String> songIds = songs
+                      .map((SongModel s) => s.id)
+                      .toList();
                   await controller.removeDownloadsBatch(songIds);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

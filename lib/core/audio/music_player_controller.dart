@@ -23,8 +23,11 @@ import 'stream_extractor.dart';
 
 /// Central controller managing playback state, queue orchestration, and dynamic art theming.
 class MusicPlayerController extends ChangeNotifier {
-  /// Native audio streaming engine.
-  final ja.AudioPlayer _player = ja.AudioPlayer();
+  /// Native audio streaming engine with custom desktop User-Agent to bypass YouTube 403 restrictions.
+  final ja.AudioPlayer _player = ja.AudioPlayer(
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    useProxyForRequestHeaders: false,
+  );
 
   /// Extractor service for YouTube streams.
   final AudioStreamExtractor _extractor = AudioStreamExtractor();
@@ -46,12 +49,6 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Monotonic session counter to prevent race conditions during rapid track switching.
   int _sessionToken = 0;
-
-  /// Whether an asynchronous track transition is in flight to guard against stale player events.
-  bool _isSwitchingTrack = false;
-
-  /// Watchdog timer to automatically nudge playback if stream stalls at 00:00.
-  Timer? _playbackStallTimer;
 
   /// Currently loaded song track.
   SongModel? _currentSong;
@@ -438,7 +435,12 @@ class MusicPlayerController extends ChangeNotifier {
   /// Listens to internal player stream updates.
   void _initPlayerListeners() {
     _playerSubscription = _player.playerStateStream.listen((state) {
-      if (_isSwitchingTrack) {
+      if (_status == PlayerStatus.loading) {
+        if (state.processingState == ja.ProcessingState.ready) {
+          _status = state.playing ? PlayerStatus.playing : PlayerStatus.paused;
+          _syncAudioNotification();
+          notifyListeners();
+        }
         return;
       }
 
@@ -462,45 +464,24 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.positionStream.listen((pos) {
-      if (_isSwitchingTrack) {
-        return;
-      }
-
-      final effectiveDuration = _duration > Duration.zero
-          ? _duration
-          : (_currentSong?.parsedDuration ?? Duration.zero);
-      final clampedPos =
-          effectiveDuration > Duration.zero && pos > effectiveDuration
-              ? effectiveDuration
-              : pos;
-
-      _position = clampedPos;
-      positionNotifier.value = clampedPos;
-
-      if (clampedPos.inMilliseconds > 100) {
-        _playbackStallTimer?.cancel();
-      }
-
+      _position = pos;
+      positionNotifier.value = pos;
       if (_duration == Duration.zero && _currentSong?.parsedDuration != null) {
         _duration = _currentSong!.parsedDuration!;
       }
       if (_currentSong != null) {
         behaviorTracker.recordSongPlaybackProgress(
           _currentSong!,
-          clampedPos,
+          pos,
           duration,
         );
       }
-      if (clampedPos.inSeconds > 0 && clampedPos.inSeconds % 5 == 0) {
+      if (pos.inSeconds > 0 && pos.inSeconds % 5 == 0) {
         _syncAudioNotification();
       }
-      /// Pre-fetch upcoming streams at 10s and 30s so the next track is cached early in the background.
-      if (clampedPos.inSeconds == 10 || clampedPos.inSeconds == 30) {
-        _prefetchUpcomingStreams();
-      }
       if (_duration > Duration.zero &&
-          (_duration - clampedPos).inSeconds <= 45 &&
-          clampedPos.inSeconds % 10 == 0) {
+          (_duration - pos).inSeconds <= 35 &&
+          pos.inSeconds % 10 == 0) {
         if (!_isPlaylistQueue) {
           unawaited(ensureAutoplayQueue());
         }
@@ -511,7 +492,6 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.durationStream.listen((dur) {
-      if (_isSwitchingTrack) return;
       if (dur != null && dur > Duration.zero) {
         _duration = dur;
         if (_currentSong != null) {
@@ -529,9 +509,6 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.bufferedPositionStream.listen((buf) {
-      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
-        return;
-      }
       _bufferedPosition = buf;
       bufferedPositionNotifier.value = buf;
     });
@@ -539,11 +516,6 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Handles automatic track advancement upon completion.
   void _onTrackCompleted() async {
-    if (_isSwitchingTrack || _status == PlayerStatus.loading) {
-      return;
-    }
-    _isSwitchingTrack = true;
-
     if (_currentSong != null) {
       behaviorTracker.recordSongCompleted(_currentSong!);
     }
@@ -551,7 +523,6 @@ class MusicPlayerController extends ChangeNotifier {
     if (_sleepTimerEndOfTrack) {
       _cancelSleepTimerInternal();
       await pause();
-      _isSwitchingTrack = false;
       notifyListeners();
       return;
     }
@@ -559,7 +530,6 @@ class MusicPlayerController extends ChangeNotifier {
     if (_loopMode == LoopMode.one) {
       await seek(Duration.zero);
       await resume();
-      _isSwitchingTrack = false;
       return;
     }
 
@@ -574,7 +544,6 @@ class MusicPlayerController extends ChangeNotifier {
     } else {
       _status = PlayerStatus.paused;
       await seek(Duration.zero);
-      _isSwitchingTrack = false;
       _syncAudioNotification();
       notifyListeners();
     }
@@ -587,7 +556,6 @@ class MusicPlayerController extends ChangeNotifier {
     bool? isPlaylistQueue,
   }) async {
     final currentSession = ++_sessionToken;
-    _isSwitchingTrack = true;
 
     if (isPlaylistQueue != null) {
       _isPlaylistQueue = isPlaylistQueue;
@@ -650,11 +618,7 @@ class MusicPlayerController extends ChangeNotifier {
     _extractDynamicColors(song.thumbnailUrl);
 
     try {
-      if (_status == PlayerStatus.playing) {
-        try {
-          await _player.pause();
-        } catch (_) {}
-      }
+      await _player.stop();
 
       bool loadedSuccessfully = false;
       Object? lastError;
@@ -675,11 +639,7 @@ class MusicPlayerController extends ChangeNotifier {
 
       if (!loadedSuccessfully) {
         List<String> candidates;
-        final cachedCandidates = _extractor.getCachedCandidateUrls(song.id);
-        if (cachedCandidates != null && cachedCandidates.isNotEmpty) {
-          candidates = cachedCandidates;
-        } else if (song.audioStreamUrl != null &&
-            song.audioStreamUrl!.isNotEmpty) {
+        if (song.audioStreamUrl != null && song.audioStreamUrl!.isNotEmpty) {
           candidates = <String>[song.audioStreamUrl!];
         } else {
           candidates = await _extractor.getCandidateStreamUrls(song.id);
@@ -700,6 +660,11 @@ class MusicPlayerController extends ChangeNotifier {
           try {
             final audioSource = ja.AudioSource.uri(
               Uri.parse(candidateUrl),
+              headers: const <String, String>{
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'Referer': 'https://www.youtube.com/',
+              },
             );
             await _player.setAudioSource(audioSource, preload: true);
             song.audioStreamUrl = candidateUrl;
@@ -728,6 +693,10 @@ class MusicPlayerController extends ChangeNotifier {
           try {
             final freshSource = ja.AudioSource.uri(
               Uri.parse(freshUrl),
+              headers: const <String, String>{
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'Referer': 'https://www.youtube.com/',
+              },
             );
             await _player.setAudioSource(freshSource, preload: true);
             song.audioStreamUrl = freshUrl;
@@ -748,45 +717,16 @@ class MusicPlayerController extends ChangeNotifier {
       }
 
       await _player.play();
-      _isSwitchingTrack = false;
       _status = PlayerStatus.playing;
       _syncAudioNotification();
       notifyListeners();
-
-      /// Arm stall watchdog to re-trigger playback if stream hangs at 00:00.
-      _playbackStallTimer?.cancel();
-      _playbackStallTimer = Timer(const Duration(seconds: 4), () {
-        if (_status == PlayerStatus.playing &&
-            _position.inMilliseconds < 100 &&
-            _currentSong?.id == song.id) {
-          debugPrint(
-            '[MusicPlayer] Playback stalled at 00:00 for ${song.title}. Nudging playback...',
-          );
-          _player.play();
-        }
-      });
-
       unawaited(ensureAutoplayQueue());
       _prefetchUpcomingStreams();
     } catch (e) {
       if (currentSession != _sessionToken) return;
-      _isSwitchingTrack = false;
-      _position = Duration.zero;
-      positionNotifier.value = Duration.zero;
-      _bufferedPosition = Duration.zero;
-      bufferedPositionNotifier.value = Duration.zero;
       _status = PlayerStatus.error;
       _errorMessage = 'Playback failure: $e';
-      _syncAudioNotification();
       notifyListeners();
-
-      /// If track fails during background playback, automatically advance to next track.
-      if (_queue.isNotEmpty && _currentIndex + 1 < _queue.length) {
-        debugPrint(
-          '[MusicPlayer] Track ${song.title} failed, advancing to next track: $e',
-        );
-        unawaited(playNext());
-      }
     }
   }
 
@@ -811,7 +751,6 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Pauses playback.
   Future<void> pause() async {
-    _playbackStallTimer?.cancel();
     await _player.pause();
     _status = PlayerStatus.paused;
     _syncAudioNotification();
@@ -835,9 +774,9 @@ class MusicPlayerController extends ChangeNotifier {
     }
   }
 
-  /// Plays previous track or restarts current track if elapsed past 3 seconds (unless forcePrevious is true).
-  Future<void> playPrevious({bool forcePrevious = false}) async {
-    if (!forcePrevious && _position.inSeconds > 3) {
+  /// Plays previous track or restarts current track if elapsed past 3 seconds.
+  Future<void> playPrevious() async {
+    if (_position.inSeconds > 3) {
       await seek(Duration.zero);
       return;
     }
@@ -1113,21 +1052,12 @@ class MusicPlayerController extends ChangeNotifier {
   void _prefetchUpcomingStreams() {
     if (_queue.isEmpty) return;
     final nextIndex = _currentIndex + 1;
-    if (nextIndex >= _queue.length) return;
-    final count = min(3, _queue.length - nextIndex);
+    final count = min(2, _queue.length - nextIndex);
     for (int i = 0; i < count; i++) {
       final upcomingSong = _queue[nextIndex + i];
       if (upcomingSong.audioStreamUrl == null ||
           upcomingSong.audioStreamUrl!.isEmpty) {
-        unawaited(() async {
-          try {
-            final candidates =
-                await _extractor.getCandidateStreamUrls(upcomingSong.id);
-            if (candidates.isNotEmpty) {
-              upcomingSong.audioStreamUrl = candidates.first;
-            }
-          } catch (_) {}
-        }());
+        unawaited(_extractor.prefetch(upcomingSong.id));
       }
     }
   }
@@ -1153,11 +1083,8 @@ class MusicPlayerController extends ChangeNotifier {
         break;
     }
 
-    final bool isActuallyPlaying = _status == PlayerStatus.playing ||
-        (_isSwitchingTrack && _status == PlayerStatus.loading);
-
     audioHandler!.updateState(
-      isPlaying: isActuallyPlaying,
+      isPlaying: _status == PlayerStatus.playing,
       processingState: processing,
       position: _position,
       bufferedPosition: _bufferedPosition,
@@ -1552,7 +1479,6 @@ class MusicPlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _playbackStallTimer?.cancel();
     _behaviorDebounceTimer?.cancel();
     final bFile = _behaviorFile;
     if (bFile != null) {
