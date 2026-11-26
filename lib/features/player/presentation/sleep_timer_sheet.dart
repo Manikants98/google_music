@@ -80,12 +80,6 @@ class SleepTimerSheet extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 0, 10, 8),
                 child: Row(
                   children: <Widget>[
-                    Icon(
-                      Icons.bedtime_rounded,
-                      color: accent,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,10 +136,6 @@ class SleepTimerSheet extends StatelessWidget {
                         alpha: 0.75,
                       ),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: accent.withValues(alpha: 0.3),
-                        width: 1.2,
-                      ),
                     ),
                     child: Row(
                       children: <Widget>[
@@ -187,19 +177,19 @@ class SleepTimerSheet extends StatelessWidget {
                                         'Stopping soon...',
                                         style: theme.textTheme.titleSmall
                                             ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                        ),
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                            ),
                                       );
                                     }
                                     return Text(
                                       'Stopping in ${formatRemaining(remaining)}',
                                       style: theme.textTheme.titleSmall
                                           ?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 14,
-                                        color: accent,
-                                      ),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 14,
+                                            color: accent,
+                                          ),
                                     );
                                   },
                                 ),
@@ -208,8 +198,8 @@ class SleepTimerSheet extends StatelessWidget {
                                 isEndOfTrack
                                     ? 'Current song will complete then pause'
                                     : (controller.sleepTimerTarget != null
-                                        ? 'Scheduled stop at ${formatStopTime(controller.sleepTimerTarget!)}'
-                                        : 'Fading out before stopping'),
+                                          ? 'Scheduled stop at ${formatStopTime(controller.sleepTimerTarget!)}'
+                                          : 'Fading out before stopping'),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontSize: 11,
@@ -354,8 +344,7 @@ class SleepTimerSheet extends StatelessWidget {
                                 children: <Widget>[
                                   Text(
                                     'End of track',
-                                    style:
-                                        theme.textTheme.bodyMedium?.copyWith(
+                                    style: theme.textTheme.bodyMedium?.copyWith(
                                       fontWeight: isEndOfTrack
                                           ? FontWeight.w800
                                           : FontWeight.w600,
@@ -369,8 +358,7 @@ class SleepTimerSheet extends StatelessWidget {
                                   const SizedBox(height: 1),
                                   Text(
                                     'Playback stops when current track finishes',
-                                    style:
-                                        theme.textTheme.bodySmall?.copyWith(
+                                    style: theme.textTheme.bodySmall?.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                       fontSize: 11,
                                     ),
@@ -379,7 +367,11 @@ class SleepTimerSheet extends StatelessWidget {
                               ),
                             ),
                             if (isEndOfTrack)
-                              Icon(Icons.check_rounded, color: accent, size: 20),
+                              Icon(
+                                Icons.check_rounded,
+                                color: accent,
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
@@ -411,8 +403,7 @@ class SleepTimerSheet extends StatelessWidget {
                                 children: <Widget>[
                                   Text(
                                     'Custom duration...',
-                                    style:
-                                        theme.textTheme.bodyMedium?.copyWith(
+                                    style: theme.textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                       letterSpacing: -0.1,
@@ -422,8 +413,7 @@ class SleepTimerSheet extends StatelessWidget {
                                   const SizedBox(height: 1),
                                   Text(
                                     'Choose custom minutes up to 4 hours',
-                                    style:
-                                        theme.textTheme.bodySmall?.copyWith(
+                                    style: theme.textTheme.bodySmall?.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                       fontSize: 11,
                                     ),
@@ -485,11 +475,7 @@ class SleepTimerSheet extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         child: Row(
           children: <Widget>[
-            Icon(
-              icon,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -536,8 +522,9 @@ class SleepTimerSheet extends StatelessWidget {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final targetTime =
-                DateTime.now().add(Duration(minutes: selectedMinutes));
+            final targetTime = DateTime.now().add(
+              Duration(minutes: selectedMinutes),
+            );
             final stopTimeStr = formatStopTime(targetTime);
 
             return AlertDialog(
@@ -607,7 +594,9 @@ class SleepTimerSheet extends StatelessWidget {
                     HapticFeedback.lightImpact();
                     Navigator.of(dialogContext).pop();
                     Navigator.of(context).pop();
-                    controller.setSleepTimer(Duration(minutes: selectedMinutes));
+                    controller.setSleepTimer(
+                      Duration(minutes: selectedMinutes),
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
