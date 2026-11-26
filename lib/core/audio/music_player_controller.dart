@@ -23,11 +23,8 @@ import 'stream_extractor.dart';
 
 /// Central controller managing playback state, queue orchestration, and dynamic art theming.
 class MusicPlayerController extends ChangeNotifier {
-  /// Native audio streaming engine with custom desktop User-Agent to bypass YouTube 403 restrictions.
-  final ja.AudioPlayer _player = ja.AudioPlayer(
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-    useProxyForRequestHeaders: false,
-  );
+  /// Native audio streaming engine.
+  final ja.AudioPlayer _player = ja.AudioPlayer();
 
   /// Extractor service for YouTube streams.
   final AudioStreamExtractor _extractor = AudioStreamExtractor();
@@ -52,6 +49,9 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Whether an asynchronous track transition is in flight to guard against stale player events.
   bool _isSwitchingTrack = false;
+
+  /// Watchdog timer to automatically nudge playback if stream stalls at 00:00.
+  Timer? _playbackStallTimer;
 
   /// Currently loaded song track.
   SongModel? _currentSong;
@@ -438,7 +438,7 @@ class MusicPlayerController extends ChangeNotifier {
   /// Listens to internal player stream updates.
   void _initPlayerListeners() {
     _playerSubscription = _player.playerStateStream.listen((state) {
-      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
+      if (_isSwitchingTrack) {
         return;
       }
 
@@ -462,7 +462,7 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _player.positionStream.listen((pos) {
-      if (_isSwitchingTrack || _status == PlayerStatus.loading) {
+      if (_isSwitchingTrack) {
         return;
       }
 
@@ -476,6 +476,11 @@ class MusicPlayerController extends ChangeNotifier {
 
       _position = clampedPos;
       positionNotifier.value = clampedPos;
+
+      if (clampedPos.inMilliseconds > 100) {
+        _playbackStallTimer?.cancel();
+      }
+
       if (_duration == Duration.zero && _currentSong?.parsedDuration != null) {
         _duration = _currentSong!.parsedDuration!;
       }
@@ -670,7 +675,11 @@ class MusicPlayerController extends ChangeNotifier {
 
       if (!loadedSuccessfully) {
         List<String> candidates;
-        if (song.audioStreamUrl != null && song.audioStreamUrl!.isNotEmpty) {
+        final cachedCandidates = _extractor.getCachedCandidateUrls(song.id);
+        if (cachedCandidates != null && cachedCandidates.isNotEmpty) {
+          candidates = cachedCandidates;
+        } else if (song.audioStreamUrl != null &&
+            song.audioStreamUrl!.isNotEmpty) {
           candidates = <String>[song.audioStreamUrl!];
         } else {
           candidates = await _extractor.getCandidateStreamUrls(song.id);
@@ -691,11 +700,6 @@ class MusicPlayerController extends ChangeNotifier {
           try {
             final audioSource = ja.AudioSource.uri(
               Uri.parse(candidateUrl),
-              headers: const <String, String>{
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://www.youtube.com/',
-              },
             );
             await _player.setAudioSource(audioSource, preload: true);
             song.audioStreamUrl = candidateUrl;
@@ -724,10 +728,6 @@ class MusicPlayerController extends ChangeNotifier {
           try {
             final freshSource = ja.AudioSource.uri(
               Uri.parse(freshUrl),
-              headers: const <String, String>{
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://www.youtube.com/',
-              },
             );
             await _player.setAudioSource(freshSource, preload: true);
             song.audioStreamUrl = freshUrl;
@@ -752,6 +752,20 @@ class MusicPlayerController extends ChangeNotifier {
       _status = PlayerStatus.playing;
       _syncAudioNotification();
       notifyListeners();
+
+      /// Arm stall watchdog to re-trigger playback if stream hangs at 00:00.
+      _playbackStallTimer?.cancel();
+      _playbackStallTimer = Timer(const Duration(seconds: 4), () {
+        if (_status == PlayerStatus.playing &&
+            _position.inMilliseconds < 100 &&
+            _currentSong?.id == song.id) {
+          debugPrint(
+            '[MusicPlayer] Playback stalled at 00:00 for ${song.title}. Nudging playback...',
+          );
+          _player.play();
+        }
+      });
+
       unawaited(ensureAutoplayQueue());
       _prefetchUpcomingStreams();
     } catch (e) {
@@ -797,6 +811,7 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Pauses playback.
   Future<void> pause() async {
+    _playbackStallTimer?.cancel();
     await _player.pause();
     _status = PlayerStatus.paused;
     _syncAudioNotification();
@@ -1537,6 +1552,7 @@ class MusicPlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _playbackStallTimer?.cancel();
     _behaviorDebounceTimer?.cancel();
     final bFile = _behaviorFile;
     if (bFile != null) {
