@@ -51,8 +51,9 @@ class NowPlayingSheet extends StatelessWidget {
 
     final accent = controller.dynamicAccentColor;
     final isDark = theme.brightness == Brightness.dark;
+    final routeAnimation = ModalRoute.of(context)?.animation;
 
-    return AnimatedContainer(
+    final sheetContent = AnimatedContainer(
       duration: const Duration(milliseconds: 600),
       color: theme.scaffoldBackgroundColor,
       child: Container(
@@ -67,7 +68,7 @@ class NowPlayingSheet extends StatelessWidget {
           top: true,
           bottom: true,
           child: Padding(
-            padding: const EdgeInsets.only(top: 50),
+            padding: const EdgeInsets.only(top: 20),
             child: Scaffold(
               backgroundColor: Colors.transparent,
               appBar: PreferredSize(
@@ -366,32 +367,8 @@ class NowPlayingSheet extends StatelessWidget {
                         type: M3EButtonGroupType.connected,
                         shape: M3EButtonShape.round,
                         size: M3EButtonSize.sm,
-                        style: M3EButtonStyle.filled,
+                        style: M3EButtonStyle.tonal,
                         neighborSquish: true,
-                        decoration: M3EButtonDecoration(
-                          backgroundColor: WidgetStateProperty.all(
-                            isDark
-                                ? Color.alphaBlend(
-                                    accent.withValues(alpha: 0.18),
-                                    const Color(0xFF1E1E1E),
-                                  )
-                                : Color.alphaBlend(
-                                    accent.withValues(alpha: 0.12),
-                                    const Color(0xFFE8EAF2),
-                                  ),
-                          ),
-                          foregroundColor: WidgetStateProperty.all(
-                            isDark ? Colors.white : const Color(0xFF191C1E),
-                          ),
-                          side: WidgetStateProperty.all(
-                            BorderSide(
-                              color: accent.withValues(
-                                alpha: isDark ? 0.24 : 0.18,
-                              ),
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
                         onSelectedIndexChanged: (int? index) {
                           if (index == 0) {
                             QueueBottomSheet.showUpNext(context);
@@ -442,6 +419,23 @@ class NowPlayingSheet extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    return AnimatedBuilder(
+      animation: routeAnimation ?? const AlwaysStoppedAnimation<double>(1.0),
+      builder: (context, child) {
+        final animValue = routeAnimation?.value ?? 1.0;
+        final progress = ((animValue - 0.96) / 0.04).clamp(0.0, 1.0);
+        final topRadius = 12.0 * (1.0 - progress);
+
+        return ClipRRect(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(topRadius),
+          ),
+          child: child,
+        );
+      },
+      child: sheetContent,
     );
   }
 }
