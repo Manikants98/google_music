@@ -1,8 +1,11 @@
+import 'dart:ui';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/audio/audio_route_service.dart';
 import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../models/playback_state.dart';
@@ -55,10 +58,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     }
     final startX = _dragNotifier.value;
     final animation = Tween<double>(begin: startX, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _slideAnimController,
-        curve: Curves.easeOutCubic,
-      ),
+      CurvedAnimation(parent: _slideAnimController, curve: Curves.easeOutCubic),
     );
     void listener() {
       _dragNotifier.value = animation.value;
@@ -84,13 +84,13 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     final enterStartX = isNext ? 120.0 : -120.0;
 
     /// 1. Smoothly finish sliding out in swipe direction
-    final exitAnimation =
-        Tween<double>(begin: currentX, end: targetExitX).animate(
-      CurvedAnimation(
-        parent: _slideAnimController,
-        curve: Curves.easeOutQuad,
-      ),
-    );
+    final exitAnimation = Tween<double>(begin: currentX, end: targetExitX)
+        .animate(
+          CurvedAnimation(
+            parent: _slideAnimController,
+            curve: Curves.easeOutQuad,
+          ),
+        );
     void exitListener() {
       _dragNotifier.value = exitAnimation.value;
     }
@@ -111,12 +111,8 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
 
     /// 3. Reposition to opposite side and slide in
     _dragNotifier.value = enterStartX;
-    final enterAnimation =
-        Tween<double>(begin: enterStartX, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _slideAnimController,
-        curve: Curves.easeOutCubic,
-      ),
+    final enterAnimation = Tween<double>(begin: enterStartX, end: 0.0).animate(
+      CurvedAnimation(parent: _slideAnimController, curve: Curves.easeOutCubic),
     );
     void enterListener() {
       _dragNotifier.value = enterAnimation.value;
@@ -141,73 +137,84 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
     }
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
     final accent = controller.dynamicAccentColor;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 0, 5, 5),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _openNowPlaying(context),
-        onHorizontalDragStart: (DragStartDetails details) {
-          if (_slideAnimController.isAnimating) {
-            _slideAnimController.stop();
-          }
-        },
-        onHorizontalDragUpdate: (DragUpdateDetails details) {
-          /// 1:1 responsive tracking with subtle damping at limits
-          double current = _dragNotifier.value + details.delta.dx;
-          if (current > 70.0) {
-            current = 70.0 + (current - 70.0) * 0.25;
-          } else if (current < -70.0) {
-            current = -70.0 + (current + 70.0) * 0.25;
-          }
-          _dragNotifier.value = current.clamp(-90.0, 90.0);
-        },
-        onHorizontalDragEnd: (DragEndDetails details) {
-          final velocity = details.primaryVelocity ?? 0.0;
-          final currentX = _dragNotifier.value;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openNowPlaying(context),
+      onHorizontalDragStart: (DragStartDetails details) {
+        if (_slideAnimController.isAnimating) {
+          _slideAnimController.stop();
+        }
+      },
+      onHorizontalDragUpdate: (DragUpdateDetails details) {
+        /// 1:1 responsive tracking with subtle damping at limits
+        double current = _dragNotifier.value + details.delta.dx;
+        if (current > 70.0) {
+          current = 70.0 + (current - 70.0) * 0.25;
+        } else if (current < -70.0) {
+          current = -70.0 + (current + 70.0) * 0.25;
+        }
+        _dragNotifier.value = current.clamp(-90.0, 90.0);
+      },
+      onHorizontalDragEnd: (DragEndDetails details) {
+        final velocity = details.primaryVelocity ?? 0.0;
+        final currentX = _dragNotifier.value;
 
-          if (currentX < -32.0 || velocity < -350.0) {
-            HapticFeedback.mediumImpact();
-            _animateSlideAndChange(controller, isNext: true);
-          } else if (currentX > 32.0 || velocity > 350.0) {
-            HapticFeedback.mediumImpact();
-            _animateSlideAndChange(controller, isNext: false);
-          } else {
-            _animateReset();
-          }
-        },
-        onVerticalDragUpdate: (DragUpdateDetails details) {
-          _rawDragY += details.delta.dy;
-        },
-        onVerticalDragEnd: (DragEndDetails details) {
-          final velocity = details.primaryVelocity ?? 0.0;
-          if (_rawDragY < -24.0 || velocity < -200.0) {
-            HapticFeedback.lightImpact();
-            _openNowPlaying(context);
-          }
-          _rawDragY = 0.0;
-        },
-        child: Container(
-          height: 58,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.35 : 0.08,
-                ),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        if (currentX < -32.0 || velocity < -350.0) {
+          HapticFeedback.mediumImpact();
+          _animateSlideAndChange(controller, isNext: true);
+        } else if (currentX > 32.0 || velocity > 350.0) {
+          HapticFeedback.mediumImpact();
+          _animateSlideAndChange(controller, isNext: false);
+        } else {
+          _animateReset();
+        }
+      },
+      onVerticalDragUpdate: (DragUpdateDetails details) {
+        _rawDragY += details.delta.dy;
+      },
+      onVerticalDragEnd: (DragEndDetails details) {
+        final velocity = details.primaryVelocity ?? 0.0;
+        if (_rawDragY < -24.0 || velocity < -200.0) {
+          HapticFeedback.lightImpact();
+          _openNowPlaying(context);
+        }
+        _rawDragY = 0.0;
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: isDark ? 0.35 : 0.08,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Stack(
-              children: <Widget>[
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+              height: 58,
+              decoration: BoxDecoration(
+                color: Color.alphaBlend(
+                  accent.withValues(alpha: isDark ? 0.28 : 0.18),
+                  colorScheme.surfaceContainerHighest.withValues(
+                    alpha: isDark ? 0.85 : 0.90,
+                  ),
+                ),
+              ),
+              child: Stack(
+                children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -216,14 +223,11 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                         child: ValueListenableBuilder<double>(
                           valueListenable: _dragNotifier,
                           builder: (context, dragX, child) {
-                            final double opacity =
-                                (1.0 - (dragX.abs() / 130.0)).clamp(0.25, 1.0);
+                            final double opacity = (1.0 - (dragX.abs() / 130.0))
+                                .clamp(0.25, 1.0);
                             return Transform.translate(
                               offset: Offset(dragX, 0),
-                              child: Opacity(
-                                opacity: opacity,
-                                child: child,
-                              ),
+                              child: Opacity(opacity: opacity, child: child),
                             );
                           },
                           child: Row(
@@ -238,8 +242,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                               Expanded(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     M3EMarqueeText(
                                       text: song.title,
@@ -250,16 +253,47 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                                           ),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      song.artist,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color:
-                                                colorScheme.onSurfaceVariant,
-                                            fontSize: 11,
-                                          ),
+                                    ValueListenableBuilder<AudioRouteInfo>(
+                                      valueListenable: AudioRouteService
+                                          .instance
+                                          .currentRouteNotifier,
+                                      builder: (context, route, _) {
+                                        final isExternal =
+                                            route.type !=
+                                            AudioRouteType.speaker;
+                                        return Row(
+                                          children: <Widget>[
+                                            if (isExternal) ...<Widget>[
+                                              Icon(
+                                                route.icon,
+                                                size: 11,
+                                                color: accent,
+                                              ),
+                                              const SizedBox(width: 4),
+                                            ],
+                                            Expanded(
+                                              child: Text(
+                                                isExternal
+                                                    ? '${song.artist} • ${route.name}'
+                                                    : song.artist,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color: isExternal
+                                                          ? accent
+                                                          : colorScheme
+                                                                .onSurfaceVariant,
+                                                      fontWeight: isExternal
+                                                          ? FontWeight.w600
+                                                          : FontWeight.w400,
+                                                      fontSize: 11,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -305,12 +339,15 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                     builder: (context, pos, child) {
                       final dur = controller.duration;
                       final progress = dur.inMilliseconds > 0
-                          ? (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0)
+                          ? (pos.inMilliseconds / dur.inMilliseconds).clamp(
+                              0.0,
+                              1.0,
+                            )
                           : 0.0;
                       return LinearProgressIndicator(
                         value: progress,
-                        minHeight: 2,
-                        backgroundColor: Colors.transparent,
+                        minHeight: 2.5,
+                        backgroundColor: accent.withValues(alpha: 0.18),
                         valueColor: AlwaysStoppedAnimation<Color>(accent),
                       );
                     },
@@ -321,6 +358,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

@@ -145,6 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final recentHistory = context.select<MusicPlayerController, List<SongModel>>(
       (c) => c.history,
     );
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -152,7 +153,12 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              padding: EdgeInsets.fromLTRB(
+                isDesktop ? 24 : 12,
+                12,
+                isDesktop ? 24 : 12,
+                12,
+              ),
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
@@ -253,7 +259,12 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                           )
                         : ListView(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
+                            padding: EdgeInsets.fromLTRB(
+                              isDesktop ? 24 : 12,
+                              0,
+                              isDesktop ? 24 : 12,
+                              120,
+                            ),
                             children: <Widget>[
                               M3EList(
                                 color: colorScheme.surfaceContainerHighest,
@@ -281,7 +292,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       slivers: <Widget>[
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                            padding: EdgeInsets.fromLTRB(
+                              isDesktop ? 24 : 12,
+                              12,
+                              isDesktop ? 24 : 12,
+                              12,
+                            ),
                             child: Text(
                               'Browse by language',
                               style: theme.textTheme.titleMedium?.copyWith(
@@ -291,14 +307,16 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ),
                         SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? 24 : 12,
+                          ),
                           sliver: SliverGrid(
                             gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isDesktop ? 4 : 2,
                                   mainAxisSpacing: 8,
                                   crossAxisSpacing: 8,
-                                  childAspectRatio: 2,
+                                  childAspectRatio: isDesktop ? 2.5 : 2,
                                 ),
                             delegate: SliverChildBuilderDelegate((
                               context,
@@ -416,7 +434,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                           ),
                         ],
-                        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                        const SliverToBoxAdapter(child: SizedBox(height: 150)),
                       ],
                     ),
             ),

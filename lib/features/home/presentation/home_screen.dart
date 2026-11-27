@@ -429,9 +429,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 24, 12, 10),
+      padding: EdgeInsets.fromLTRB(
+        isDesktop ? 24 : 12,
+        24,
+        isDesktop ? 24 : 12,
+        10,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -475,6 +481,83 @@ class _HomeScreenState extends State<HomeScreen> {
     required ColorScheme colorScheme,
     required ThemeData theme,
   }) {
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
+
+    Widget buildTile(SongModel track) {
+      final playCount = controller.behaviorTracker.getPlayCount(track.id);
+      final score = controller.behaviorTracker.computeTrackScore(
+        track,
+        targetLanguage: _selectedLanguage,
+        addExplorationJitter: false,
+      );
+      final isPersonalPick = playCount >= 2 || score >= 28.0;
+      final customSubtitle = playCount >= 2
+          ? 'Most played • ${track.artist} • ${track.duration}'
+          : null;
+
+      return M3ESongTile(
+        song: track,
+        subtitle: customSubtitle,
+        isPersonalPick: isPersonalPick,
+      );
+    }
+
+    if (isDesktop && tracks.length >= 2) {
+      final mid = (tracks.length + 1) ~/ 2;
+      final leftTracks = tracks.sublist(0, mid);
+      final rightTracks = tracks.sublist(mid);
+
+      return SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        sliver: SliverToBoxAdapter(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: M3EList(
+                  color: colorScheme.surfaceContainerHighest,
+                  outerRadius: 12,
+                  innerRadius: 4,
+                  gap: 2,
+                  itemCount: leftTracks.length,
+                  onTap: (int index) {
+                    M3ESongTile.handleTap(
+                      context,
+                      leftTracks[index],
+                      queue: tracks,
+                    );
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return buildTile(leftTracks[index]);
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: M3EList(
+                  color: colorScheme.surfaceContainerHighest,
+                  outerRadius: 12,
+                  innerRadius: 4,
+                  gap: 2,
+                  itemCount: rightTracks.length,
+                  onTap: (int index) {
+                    M3ESongTile.handleTap(
+                      context,
+                      rightTracks[index],
+                      queue: tracks,
+                    );
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return buildTile(rightTracks[index]);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       sliver: SliverToBoxAdapter(
@@ -488,23 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
             M3ESongTile.handleTap(context, tracks[index], queue: tracks);
           },
           itemBuilder: (BuildContext context, int index) {
-            final track = tracks[index];
-            final playCount = controller.behaviorTracker.getPlayCount(track.id);
-            final score = controller.behaviorTracker.computeTrackScore(
-              track,
-              targetLanguage: _selectedLanguage,
-              addExplorationJitter: false,
-            );
-            final isPersonalPick = playCount >= 2 || score >= 28.0;
-            final customSubtitle = playCount >= 2
-                ? 'Most played • ${track.artist} • ${track.duration}'
-                : null;
-
-            return M3ESongTile(
-              song: track,
-              subtitle: customSubtitle,
-              isPersonalPick: isPersonalPick,
-            );
+            return buildTile(tracks[index]);
           },
         ),
       ),
@@ -551,6 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final controller = context.watch<MusicPlayerController>();
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
     final speedDialTracks = controller.getSpeedDialSongs(
       limit: 5,
       fallbackTracks: _tracks,
@@ -565,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverAppBar(
             floating: true,
             pinned: false,
-            titleSpacing: 12,
+            titleSpacing: isDesktop ? 24 : 12,
             backgroundColor: colorScheme.surface,
             elevation: 0,
             title: Row(
@@ -586,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: colorScheme.onSurface,
                 onPressed: widget.onSearchTapped,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: isDesktop ? 18 : 6),
             ],
           ),
           SliverToBoxAdapter(
@@ -594,7 +662,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 38,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 24 : 12,
+                ),
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -626,7 +696,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (_isLoading) ...<Widget>[
             const SliverToBoxAdapter(child: HomeScreenSkeleton()),
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(child: SizedBox(height: 150)),
           ] else if (_tracks.isEmpty) ...<Widget>[
             SliverFillRemaining(
               hasScrollBody: false,
@@ -744,7 +814,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     return ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 24 : 12,
+                      ),
                       itemCount: displayTracks.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(width: 14),
@@ -830,7 +902,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(child: SizedBox(height: 150)),
           ],
         ],
       ),

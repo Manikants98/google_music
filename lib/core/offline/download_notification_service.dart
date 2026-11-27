@@ -106,13 +106,10 @@ class DownloadNotificationService {
         ScaffoldMessenger.of(navContext).showSnackBar(
           SnackBar(
             backgroundColor: colorScheme.surfaceContainerHighest,
-            elevation: 6,
+            elevation: 8,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-              ),
+              borderRadius: BorderRadius.circular(16),
             ),
             content: Row(
               children: <Widget>[

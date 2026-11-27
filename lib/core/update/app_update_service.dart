@@ -287,21 +287,14 @@ class AppUpdateService {
       if (!context.mounted) return;
       final theme = Theme.of(context);
       final colorScheme = theme.colorScheme;
-      final isDark = theme.brightness == Brightness.dark;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: colorScheme.surfaceContainerHighest,
-          elevation: 6,
+          elevation: 8,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.08),
-              width: 1,
-            ),
+            borderRadius: BorderRadius.circular(16),
           ),
           content: Row(
             children: <Widget>[

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:material_ui/material_ui.dart';
@@ -7,6 +9,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
+import 'core/audio/audio_route_service.dart';
 import 'core/audio/music_audio_handler.dart';
 import 'core/audio/music_player_controller.dart';
 import 'core/offline/download_notification_service.dart';
@@ -19,6 +22,29 @@ import 'features/search/presentation/search_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/splash/presentation/splash_screen.dart';
 
+/// Custom scroll behavior that completely removes scrollbar thumbs while enabling smooth dragging across all devices.
+class HiddenScrollBehavior extends MaterialScrollBehavior {
+  /// Creates hidden scrollbar behavior.
+  const HiddenScrollBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => <PointerDeviceKind>{
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
+}
+
 /// Global navigation key enabling background notification tap deep linking.
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -28,6 +54,7 @@ Future<void> main() async {
 
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
+  await AudioRouteService.instance.initialize();
 
   DownloadNotificationService.initialize(rootNavigatorKey);
 
@@ -122,14 +149,10 @@ class GoogleMusicApp extends StatelessWidget {
                 fontSize: 13,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(16),
               ),
               behavior: SnackBarBehavior.floating,
-              elevation: 4,
+              elevation: 8,
             ),
           );
 
@@ -176,14 +199,10 @@ class GoogleMusicApp extends StatelessWidget {
                 fontSize: 13,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(16),
               ),
               behavior: SnackBarBehavior.floating,
-              elevation: 4,
+              elevation: 8,
             ),
           );
 
@@ -211,13 +230,17 @@ class GoogleMusicApp extends StatelessWidget {
             navigatorKey: rootNavigatorKey,
             title: 'Google Music',
             debugShowCheckedModeBanner: false,
+            scrollBehavior: const HiddenScrollBehavior(),
             themeMode: themeProps.mode,
             theme: lightTheme,
             darkTheme: darkTheme,
             builder: (context, appChild) {
-              return M3ETheme(
-                data: m3eThemeData,
-                child: appChild ?? const SizedBox.shrink(),
+              return ScrollConfiguration(
+                behavior: const HiddenScrollBehavior(),
+                child: M3ETheme(
+                  data: m3eThemeData,
+                  child: appChild ?? const SizedBox.shrink(),
+                ),
               );
             },
             home: const GoogleMusicSplashScreen(
@@ -293,47 +316,83 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       (c) => c.currentSong != null,
     );
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isDesktop = screenWidth > 750;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      extendBody: true,
       body: IndexedStack(index: _selectedTab, children: _screens),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (hasActiveSong) const MiniPlayerPill(),
-          Container(
-            decoration: BoxDecoration(color: colorScheme.surfaceContainer),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+          if (hasActiveSong)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isDesktop ? 24 : 8,
+                0,
+                isDesktop ? 24 : 8,
+                8,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: const MiniPlayerPill(),
                 ),
-                child: GNav(
-                  selectedIndex: _selectedTab,
-                  onTabChange: _onTabSelected,
-                  gap: 8,
-                  activeColor: accent,
-                  iconSize: 22,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+              ),
+            ),
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainer.withValues(
+                    alpha: isDark ? 0.85 : 0.90,
                   ),
-                  duration: const Duration(milliseconds: 350),
-                  tabBackgroundColor: accent.withValues(alpha: 0.16),
-                  color: colorScheme.onSurfaceVariant,
-                  tabBorderRadius: 24,
-                  textStyle: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 36 : 16,
+                      vertical: 8,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: GNav(
+                          selectedIndex: _selectedTab,
+                          onTabChange: _onTabSelected,
+                          gap: 8,
+                          activeColor: accent,
+                          iconSize: 22,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          duration: const Duration(milliseconds: 350),
+                          tabBackgroundColor: accent.withValues(alpha: 0.16),
+                          color: colorScheme.onSurfaceVariant,
+                          tabBorderRadius: 24,
+                          textStyle: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                          tabs: const <GButton>[
+                            GButton(icon: Icons.home_rounded, text: 'Home'),
+                            GButton(icon: Icons.search_rounded, text: 'Search'),
+                            GButton(
+                              icon: Icons.library_music_rounded,
+                              text: 'Library',
+                            ),
+                            GButton(icon: Icons.settings_rounded, text: 'Settings'),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  tabs: const <GButton>[
-                    GButton(icon: Icons.home_rounded, text: 'Home'),
-                    GButton(icon: Icons.search_rounded, text: 'Search'),
-                    GButton(icon: Icons.library_music_rounded, text: 'Library'),
-                    GButton(icon: Icons.settings_rounded, text: 'Settings'),
-                  ],
                 ),
               ),
             ),

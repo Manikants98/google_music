@@ -41,12 +41,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final history = controller.history;
     final downloaded = controller.downloadedSongs;
     final playlists = controller.playlists;
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
+    final hPad = isDesktop ? 24.0 : 12.0;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
-        titleSpacing: 12,
+        titleSpacing: hPad,
         elevation: 0,
         title: Text(
           'Library',
@@ -61,7 +63,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             color: colorScheme.onSurface,
             onPressed: widget.onSearchTapped,
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: isDesktop ? 18 : 6),
         ],
       ),
       body: CustomScrollView(
@@ -71,7 +73,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               height: 38,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 itemCount: _tabs.length,
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
@@ -95,7 +97,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             if (playlists.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -156,7 +158,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 sliver: SliverToBoxAdapter(
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
@@ -337,7 +339,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             if (liked.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                   child: Row(
                     children: <Widget>[
                       Text(
@@ -351,7 +353,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 sliver: SliverToBoxAdapter(
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
@@ -378,7 +380,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             if (downloaded.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -428,7 +430,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 sliver: SliverToBoxAdapter(
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
@@ -503,7 +505,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             if (history.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                   child: Row(
                     children: <Widget>[
                       Text(
@@ -517,7 +519,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 sliver: SliverToBoxAdapter(
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
@@ -574,7 +576,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
         ],
       ),
     );

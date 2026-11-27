@@ -65,17 +65,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: Color.alphaBlend(
-          accent.withValues(alpha: isDark ? 0.08 : 0.05),
+          accent.withValues(alpha: isDark ? 0.12 : 0.08),
           colorScheme.surfaceContainerHighest,
         ),
-        elevation: 6,
+        elevation: 8,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: accent.withValues(alpha: isDark ? 0.35 : 0.25),
-            width: 1.2,
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         duration: duration,
         content: Row(
@@ -166,13 +162,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ThemeMode.dark => 'Dark theme',
       ThemeMode.light => 'Light theme',
     };
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
         elevation: 0,
-        titleSpacing: 12,
+        titleSpacing: isDesktop ? 24 : 12,
         title: Text(
           'Settings',
           style: theme.textTheme.headlineSmall?.copyWith(
@@ -574,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
         ],
       ),
     );
@@ -590,12 +587,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ColorScheme colorScheme,
     required ThemeData theme,
   }) {
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
+
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            padding: EdgeInsets.fromLTRB(
+              isDesktop ? 24 : 12,
+              8,
+              isDesktop ? 24 : 12,
+              10,
+            ),
             child: Row(
               children: <Widget>[
                 Text(
@@ -608,7 +612,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 24 : 12,
+            ),
             child: M3EList(
               color: colorScheme.surfaceContainerHighest,
               outerRadius: 12,
