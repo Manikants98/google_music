@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
 
 /// Handler managing system notifications and lockscreen media transport controls.
@@ -114,5 +116,18 @@ class GoogleMusicAudioHandler extends BaseAudioHandler
       await onStop!();
     }
     await super.stop();
+  }
+
+  @override
+  Future<void> onTaskRemoved() async {
+    try {
+      if (onStop != null) {
+        await onStop!();
+      }
+      await stop();
+    } catch (_) {}
+    if (Platform.isAndroid) {
+      exit(0);
+    }
   }
 }

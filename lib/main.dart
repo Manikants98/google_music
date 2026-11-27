@@ -73,7 +73,7 @@ Future<void> main() async {
       androidNotificationChannelId: 'com.mkx.google_music.playback',
       androidNotificationChannelName: 'Google Music Playback',
       androidNotificationOngoing: false,
-      androidStopForegroundOnPause: false,
+      androidStopForegroundOnPause: true,
       androidNotificationClickStartsActivity: true,
       androidResumeOnClick: true,
       androidNotificationIcon: 'mipmap/ic_launcher',

@@ -446,7 +446,7 @@ class MusicPlayerController extends ChangeNotifier {
     audioHandler!.onSkipToNext = playNext;
     audioHandler!.onSkipToPrevious = playPrevious;
     audioHandler!.onSeek = seek;
-    audioHandler!.onStop = pause;
+    audioHandler!.onStop = stop;
   }
 
   /// Wires offline download service callbacks for separate native download notifications.
@@ -866,6 +866,16 @@ class MusicPlayerController extends ChangeNotifier {
   Future<void> pause() async {
     await _player.pause();
     _status = PlayerStatus.paused;
+    _syncAudioNotification();
+    notifyListeners();
+  }
+
+  /// Stops playback completely, resets position, and updates notification.
+  Future<void> stop() async {
+    await _player.stop();
+    _status = PlayerStatus.idle;
+    _position = Duration.zero;
+    positionNotifier.value = Duration.zero;
     _syncAudioNotification();
     notifyListeners();
   }
