@@ -609,8 +609,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: M3EList(
               color: colorScheme.surfaceContainerHighest,
               outerRadius: 12,
-              innerRadius: 0,
-              gap: 0,
+              innerRadius: 4,
+              gap: 2,
               itemCount: items.length,
               itemBuilder: (BuildContext context, int index) {
                 final item = items[index];

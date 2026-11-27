@@ -157,8 +157,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 0,
-                    gap: 0,
+                    innerRadius: 4,
+                    gap: 2,
                     itemCount: playlists.length,
                     onTap: (int index) {
                       Navigator.of(context).push(
@@ -352,8 +352,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 0,
-                    gap: 0,
+                    innerRadius: 4,
+                    gap: 2,
                     itemCount: liked.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(
@@ -423,8 +423,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 0,
-                    gap: 0,
+                    innerRadius: 4,
+                    gap: 2,
                     itemCount: downloaded.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(
@@ -512,8 +512,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 0,
-                    gap: 0,
+                    innerRadius: 4,
+                    gap: 2,
                     itemCount: history.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(
