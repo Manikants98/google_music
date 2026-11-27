@@ -346,11 +346,11 @@ class NowPlayingSheet extends StatelessWidget {
               ),
             ],
           ),
-          const Spacer(flex: DateTime.december),
+          const Spacer(flex: 8),
           _buildControlsRow(controller, accent, isDark, colorScheme),
-          const Spacer(flex: DateTime.december),
+          const Spacer(flex: 6),
           _buildAudioRoutePill(context, accent, isDark, colorScheme),
-          const SizedBox(height: 10),
+          const Spacer(flex: 6),
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildButtonGroup(context),
@@ -443,7 +443,7 @@ class NowPlayingSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 28),
                     _buildControlsRow(controller, accent, isDark, colorScheme),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                     Center(
                       child: _buildAudioRoutePill(
                         context,
@@ -452,7 +452,7 @@ class NowPlayingSheet extends StatelessWidget {
                         colorScheme,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 22),
                     Center(child: _buildButtonGroup(context)),
                   ],
                 ),
@@ -485,12 +485,6 @@ class NowPlayingSheet extends StatelessWidget {
                   ? accent.withValues(alpha: isDark ? 0.22 : 0.14)
                   : colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isExternal
-                    ? accent.withValues(alpha: 0.35)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.2),
-                width: 1,
-              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
