@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:palette_generator/palette_generator.dart';
@@ -18,6 +19,7 @@ import '../network/lyrics_service.dart';
 import '../offline/download_notification_service.dart';
 import '../offline/offline_download_service.dart';
 import '../playlist/playlist_service.dart';
+import 'audio_route_service.dart';
 import 'music_audio_handler.dart';
 import 'stream_extractor.dart';
 
@@ -46,6 +48,18 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Subscription to player state changes.
   StreamSubscription<ja.PlayerState>? _playerSubscription;
+
+  /// Subscription to becoming noisy audio events (e.g. headphone unplug).
+  StreamSubscription<void>? _noisySubscription;
+
+  /// Subscription to audio interruption events (e.g. phone call).
+  StreamSubscription<AudioInterruptionEvent>? _interruptionSubscription;
+
+  /// Subscription to player playing state changes.
+  StreamSubscription<bool>? _playingSubscription;
+
+  /// Last observed audio route type to detect earphone/Bluetooth disconnects.
+  AudioRouteType? _lastRouteType;
 
   /// Monotonic session counter to prevent race conditions during rapid track switching.
   int _sessionToken = 0;
@@ -207,6 +221,7 @@ class MusicPlayerController extends ChangeNotifier {
     _playlistService = playlistService;
     _initHandlerCallbacks();
     _initPlayerListeners();
+    _initAudioSessionListeners();
     _initOfflineServiceCallbacks();
     this.offlineService.addListener(notifyListeners);
     this.playlistService.addListener(notifyListeners);
@@ -543,6 +558,73 @@ class MusicPlayerController extends ChangeNotifier {
       _bufferedPosition = buf;
       bufferedPositionNotifier.value = buf;
     });
+
+    _playingSubscription = _player.playingStream.listen((playing) {
+      if (!playing && _status == PlayerStatus.playing) {
+        _status = PlayerStatus.paused;
+        _syncAudioNotification();
+        notifyListeners();
+      } else if (playing && _status == PlayerStatus.paused) {
+        _status = PlayerStatus.playing;
+        _syncAudioNotification();
+        notifyListeners();
+      }
+    });
+  }
+
+  /// Listens to system audio session events such as headphone disconnects and interruptions.
+  void _initAudioSessionListeners() {
+    AudioSession.instance.then((session) {
+      _noisySubscription = session.becomingNoisyEventStream.listen((_) {
+        if (isPlaying) {
+          pause();
+        }
+      });
+
+      _interruptionSubscription =
+          session.interruptionEventStream.listen((event) {
+        if (event.begin) {
+          switch (event.type) {
+            case AudioInterruptionType.duck:
+              _player.setVolume(0.5);
+              break;
+            case AudioInterruptionType.pause:
+            case AudioInterruptionType.unknown:
+              if (isPlaying) {
+                pause();
+              }
+              break;
+          }
+        } else {
+          switch (event.type) {
+            case AudioInterruptionType.duck:
+              _player.setVolume(1.0);
+              break;
+            case AudioInterruptionType.pause:
+            case AudioInterruptionType.unknown:
+              break;
+          }
+        }
+      });
+    }).catchError((dynamic err) {
+      debugPrint('[MusicPlayerController] AudioSession listener error: $err');
+    });
+
+    _lastRouteType = AudioRouteService.instance.currentRouteNotifier.value.type;
+    AudioRouteService.instance.currentRouteNotifier.addListener(_handleAudioRouteChanged);
+  }
+
+  /// Handles audio output route changes to pause playback when external devices disconnect.
+  void _handleAudioRouteChanged() {
+    final currentRoute = AudioRouteService.instance.currentRouteNotifier.value;
+    if (_lastRouteType != null &&
+        _lastRouteType != AudioRouteType.speaker &&
+        currentRoute.type == AudioRouteType.speaker) {
+      if (isPlaying) {
+        pause();
+      }
+    }
+    _lastRouteType = currentRoute.type;
   }
 
   /// Handles automatic track advancement upon completion.
@@ -1520,6 +1602,11 @@ class MusicPlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
+    AudioRouteService.instance.currentRouteNotifier
+        .removeListener(_handleAudioRouteChanged);
+    _noisySubscription?.cancel();
+    _interruptionSubscription?.cancel();
+    _playingSubscription?.cancel();
     _behaviorDebounceTimer?.cancel();
     final bFile = _behaviorFile;
     if (bFile != null) {
