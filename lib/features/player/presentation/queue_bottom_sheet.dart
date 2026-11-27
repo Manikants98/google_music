@@ -191,7 +191,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82,
+      height: MediaQuery.of(context).size.height * 0.90,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -780,7 +780,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                       physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics(),
                       ),
-                      padding: const EdgeInsets.fromLTRB(24, 100, 24, 300),
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[

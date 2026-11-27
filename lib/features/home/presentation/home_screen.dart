@@ -79,7 +79,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        AppUpdateService.checkAndPrompt(context, manual: false);
+        final isBeta =
+            context.read<MusicPlayerController>().isBetaChannelEnabled;
+        AppUpdateService.checkAndPrompt(
+          context,
+          manual: false,
+          includeBeta: isBeta,
+        );
       }
     });
   }

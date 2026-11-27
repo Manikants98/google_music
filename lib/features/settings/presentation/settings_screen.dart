@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -35,9 +36,122 @@ class _SettingsItem {
 }
 
 /// Settings and preferences screen designed with Google Music M3 Expressive card lists.
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   /// Creates settings screen.
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _developerTapCount = 0;
+  DateTime? _lastTapTime;
+
+  /// Displays an expressive floating SnackBar styled dynamically with active theme accent.
+  void _showDynamicSnackBar(
+    BuildContext context, {
+    required String message,
+    required IconData icon,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final controller = context.read<MusicPlayerController>();
+    final accent = controller.dynamicAccentColor;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Color.alphaBlend(
+          accent.withValues(alpha: isDark ? 0.08 : 0.05),
+          colorScheme.surfaceContainerHighest,
+        ),
+        elevation: 6,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: accent.withValues(alpha: isDark ? 0.35 : 0.25),
+            width: 1.2,
+          ),
+        ),
+        duration: duration,
+        content: Row(
+          children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.16),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: accent,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Handles 5-tap gesture on application version to unlock developer beta channel.
+  void _handleVersionTap(
+    BuildContext context,
+    MusicPlayerController controller,
+  ) {
+    final now = DateTime.now();
+    if (_lastTapTime == null ||
+        now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
+      _developerTapCount = 0;
+    }
+    _lastTapTime = now;
+    _developerTapCount++;
+
+    if (controller.isDeveloperModeEnabled) {
+      _showDynamicSnackBar(
+        context,
+        message: 'Developer Options are active. Manage in section below.',
+        icon: Icons.info_outline_rounded,
+      );
+      return;
+    }
+
+    if (_developerTapCount >= 5) {
+      _developerTapCount = 0;
+      HapticFeedback.heavyImpact();
+      controller.setDeveloperMode(true);
+      controller.setBetaChannel(true);
+      _showDynamicSnackBar(
+        context,
+        message: 'Developer Options unlocked. Beta Channel is active.',
+        icon: Icons.developer_mode_rounded,
+        duration: const Duration(seconds: 3),
+      );
+    } else if (_developerTapCount >= 2) {
+      HapticFeedback.lightImpact();
+      final remaining = 5 - _developerTapCount;
+      _showDynamicSnackBar(
+        context,
+        message: '$remaining steps away from enabling Developer Options',
+        icon: Icons.touch_app_rounded,
+        duration: const Duration(milliseconds: 700),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,19 +420,24 @@ class SettingsScreen extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                onTap: () => _handleVersionTap(context, controller),
               ),
               _SettingsItem(
                 icon: Icons.system_update_rounded,
                 title: 'Check for Updates',
-                subtitle:
-                    'Current version: v${AppUpdateService.currentAppVersion}',
+                subtitle: controller.isBetaChannelEnabled
+                    ? 'Current: v${AppUpdateService.currentAppVersion} • Beta Channel'
+                    : 'Current version: v${AppUpdateService.currentAppVersion}',
                 trailing: Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
                   color: colorScheme.onSurfaceVariant,
                 ),
-                onTap: () =>
-                    AppUpdateService.checkAndPrompt(context, manual: true),
+                onTap: () => AppUpdateService.checkAndPrompt(
+                  context,
+                  manual: true,
+                  includeBeta: controller.isBetaChannelEnabled,
+                ),
               ),
               _SettingsItem(
                 icon: Icons.code_rounded,
@@ -366,6 +485,42 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+          if (controller.isDeveloperModeEnabled)
+            _buildSettingsGroup(
+              context: context,
+              title: 'Developer Options',
+              icon: Icons.developer_mode_rounded,
+              controller: controller,
+              colorScheme: colorScheme,
+              theme: theme,
+              items: <_SettingsItem>[
+                _SettingsItem(
+                  icon: Icons.science_rounded,
+                  title: 'Beta Channel Updates',
+                  subtitle: controller.isBetaChannelEnabled
+                      ? 'Enabled (Turn off to disable & hide this section)'
+                      : 'Disabled',
+                  trailing: Switch(
+                    value: controller.isBetaChannelEnabled,
+                    activeThumbColor: accent,
+                    onChanged: (val) {
+                      HapticFeedback.mediumImpact();
+                      if (!val) {
+                        controller.setBetaChannel(false);
+                        controller.setDeveloperMode(false);
+                        _showDynamicSnackBar(
+                          context,
+                          message: 'Developer Options disabled and hidden.',
+                          icon: Icons.visibility_off_rounded,
+                        );
+                      } else {
+                        controller.setBetaChannel(true);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 20),
@@ -753,25 +908,10 @@ class SettingsScreen extends StatelessWidget {
               onPressed: () {
                 controller.clearHistory();
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.check_circle_outline_rounded,
-                          color: accent,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Listening history cleared'),
-                      ],
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                _showDynamicSnackBar(
+                  context,
+                  message: 'Listening history cleared',
+                  icon: Icons.check_circle_rounded,
                 );
               },
               child: const Text('Clear'),
@@ -846,25 +986,10 @@ class SettingsScreen extends StatelessWidget {
               onPressed: () {
                 controller.clearStreamCache();
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.check_circle_outline_rounded,
-                          color: accent,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Audio stream cache cleared'),
-                      ],
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                _showDynamicSnackBar(
+                  context,
+                  message: 'Audio stream cache cleared',
+                  icon: Icons.check_circle_rounded,
                 );
               },
               child: const Text('Clear Cache'),
@@ -881,12 +1006,10 @@ class SettingsScreen extends StatelessWidget {
     MusicPlayerController controller,
   ) {
     if (controller.downloadedSongs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No downloaded songs found to delete'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showDynamicSnackBar(
+        context,
+        message: 'No downloaded songs found to delete',
+        icon: Icons.info_outline_rounded,
       );
       return;
     }
@@ -946,25 +1069,10 @@ class SettingsScreen extends StatelessWidget {
               await controller.clearAllDownloads();
               if (context.mounted) {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Text('All offline downloads removed'),
-                      ],
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                _showDynamicSnackBar(
+                  context,
+                  message: 'All offline downloads removed',
+                  icon: Icons.check_circle_rounded,
                 );
               }
             },

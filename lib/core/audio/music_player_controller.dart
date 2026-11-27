@@ -162,6 +162,12 @@ class MusicPlayerController extends ChangeNotifier {
   /// Whether autoplay continuous recommendation is enabled.
   bool _isAutoplayEnabled = true;
 
+  /// Whether developer beta mode is unlocked via 5-tap gesture.
+  bool _isDeveloperModeEnabled = false;
+
+  /// Whether beta channel updates are enabled.
+  bool _isBetaChannelEnabled = false;
+
   /// Backing instance for offline download service.
   OfflineDownloadService? _offlineService;
 
@@ -322,6 +328,31 @@ class MusicPlayerController extends ChangeNotifier {
   void setAutoplayEnabled(bool enabled) {
     if (_isAutoplayEnabled != enabled) {
       _isAutoplayEnabled = enabled;
+      unawaited(_persistSettings());
+      notifyListeners();
+    }
+  }
+
+  /// Whether developer beta mode is unlocked.
+  bool get isDeveloperModeEnabled => _isDeveloperModeEnabled;
+
+  /// Sets developer mode state and persists choice.
+  void setDeveloperMode(bool enabled) {
+    if (_isDeveloperModeEnabled != enabled) {
+      _isDeveloperModeEnabled = enabled;
+      if (!enabled) _isBetaChannelEnabled = false;
+      unawaited(_persistSettings());
+      notifyListeners();
+    }
+  }
+
+  /// Whether beta channel update check is enabled.
+  bool get isBetaChannelEnabled => _isBetaChannelEnabled;
+
+  /// Sets beta channel updates toggle and persists choice.
+  void setBetaChannel(bool enabled) {
+    if (_isBetaChannelEnabled != enabled) {
+      _isBetaChannelEnabled = enabled;
       unawaited(_persistSettings());
       notifyListeners();
     }
@@ -1443,6 +1474,14 @@ class MusicPlayerController extends ChangeNotifier {
         if (autoplay != null) {
           _isAutoplayEnabled = autoplay;
         }
+        final devMode = decoded['isDeveloperModeEnabled'] as bool?;
+        if (devMode != null) {
+          _isDeveloperModeEnabled = devMode;
+        }
+        final beta = decoded['isBetaChannelEnabled'] as bool?;
+        if (beta != null) {
+          _isBetaChannelEnabled = beta;
+        }
       }
     } catch (e) {
       debugPrint('[MusicPlayerController] Error loading settings: $e');
@@ -1456,6 +1495,8 @@ class MusicPlayerController extends ChangeNotifier {
     final data = <String, Object>{
       'themeMode': _themeMode.name,
       'isAutoplayEnabled': _isAutoplayEnabled,
+      'isDeveloperModeEnabled': _isDeveloperModeEnabled,
+      'isBetaChannelEnabled': _isBetaChannelEnabled,
     };
     await _writeJsonAtomically(file, data);
   }

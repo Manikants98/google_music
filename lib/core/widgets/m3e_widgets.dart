@@ -44,6 +44,88 @@ class M3EAlbumArt extends StatelessWidget {
     this.glowColor,
   });
 
+  /// Builds an expressive, glowing vinyl disc placeholder styled with active dynamic theme colors.
+  Widget _buildPlaceholder(
+    BuildContext context,
+    double effectiveWidth,
+    double effectiveHeight,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = glowColor ?? colorScheme.primary;
+
+    final double iconSize = (effectiveWidth * 0.18).clamp(20.0, 52.0);
+    final double centerCircleSize = (effectiveWidth * 0.36).clamp(36.0, 100.0);
+    final double outerCircleSize = (effectiveWidth * 0.68).clamp(64.0, 200.0);
+
+    return Container(
+      width: effectiveWidth,
+      height: effectiveHeight,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.20 : 0.14),
+              colorScheme.surfaceContainerHighest,
+            ),
+            Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.08 : 0.05),
+              colorScheme.surfaceContainer,
+            ),
+          ],
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          if (effectiveWidth >= 80)
+            Container(
+              width: outerCircleSize,
+              height: outerCircleSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: accent.withValues(alpha: isDark ? 0.14 : 0.09),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          Container(
+            width: centerCircleSize,
+            height: centerCircleSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accent.withValues(alpha: isDark ? 0.20 : 0.14),
+              border: Border.all(
+                color: accent.withValues(alpha: isDark ? 0.30 : 0.22),
+                width: 1.5,
+              ),
+              boxShadow: effectiveWidth >= 100
+                  ? <BoxShadow>[
+                      BoxShadow(
+                        color: accent.withValues(alpha: isDark ? 0.25 : 0.15),
+                        blurRadius: 18,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: Icon(
+                Icons.music_note_rounded,
+                size: iconSize,
+                color: accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -69,31 +151,45 @@ class M3EAlbumArt extends StatelessWidget {
           effectiveHeight = size;
         }
 
+        final BoxShadow? shadow = elevation > 0
+            ? BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: elevation * 2,
+                offset: Offset(0, elevation * 0.5),
+              )
+            : null;
+
+        if (imageUrl.trim().isEmpty) {
+          return Container(
+            width: effectiveWidth,
+            height: effectiveHeight,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              boxShadow: shadow != null ? <BoxShadow>[shadow] : null,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: _buildPlaceholder(context, effectiveWidth, effectiveHeight),
+            ),
+          );
+        }
+
         return Container(
           width: effectiveWidth,
           height: effectiveHeight,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
-            boxShadow: elevation > 0
-                ? <BoxShadow>[
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: elevation * 2,
-                      offset: Offset(0, elevation * 0.5),
-                    ),
-                  ]
-                : null,
+            boxShadow: shadow != null ? <BoxShadow>[shadow] : null,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(radius),
             child: CachedNetworkImage(
               imageUrl: SongModel.getHighResThumbnail(imageUrl),
               fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                child: const Center(
-                  child: Icon(Icons.music_note_rounded, size: 24),
-                ),
+              placeholder: (context, url) => _buildPlaceholder(
+                context,
+                effectiveWidth,
+                effectiveHeight,
               ),
               errorWidget: (context, url, error) {
                 final fallbackUrl = url.contains('hq720.jpg')
@@ -103,19 +199,22 @@ class M3EAlbumArt extends StatelessWidget {
                   return CachedNetworkImage(
                     imageUrl: fallbackUrl,
                     fit: BoxFit.cover,
-                    errorWidget: (context, url, error) => Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                      child: const Center(
-                        child: Icon(Icons.music_note_rounded, size: 24),
-                      ),
+                    placeholder: (context, url) => _buildPlaceholder(
+                      context,
+                      effectiveWidth,
+                      effectiveHeight,
+                    ),
+                    errorWidget: (context, url, error) => _buildPlaceholder(
+                      context,
+                      effectiveWidth,
+                      effectiveHeight,
                     ),
                   );
                 }
-                return Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                  child: const Center(
-                    child: Icon(Icons.broken_image_rounded, size: 24),
-                  ),
+                return _buildPlaceholder(
+                  context,
+                  effectiveWidth,
+                  effectiveHeight,
                 );
               },
             ),

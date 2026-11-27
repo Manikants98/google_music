@@ -143,6 +143,28 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                           ),
                         ),
                       ),
+                      if (widget.updateInfo.isBeta) ...<Widget>[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'BETA',
+                            style: TextStyle(
+                              color: Colors.amber,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(width: 8),
                       Text(
                         widget.updateInfo.formattedFileSize,

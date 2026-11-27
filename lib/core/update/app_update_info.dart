@@ -18,6 +18,9 @@ class AppUpdateInfo {
   /// Timestamp when release was published.
   final DateTime? publishedAt;
 
+  /// Whether this update is a pre-release or beta build.
+  final bool isBeta;
+
   /// Creates an application update information container.
   const AppUpdateInfo({
     required this.version,
@@ -26,6 +29,7 @@ class AppUpdateInfo {
     required this.downloadUrl,
     required this.fileSizeBytes,
     this.publishedAt,
+    this.isBeta = false,
   });
 
   /// Formatted file size string (e.g. '58.2 MB').

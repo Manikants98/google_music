@@ -18,7 +18,7 @@ class AppUpdateService {
   static const String githubRepo = 'google_music';
 
   /// Active application semantic version name.
-  static const String currentAppVersion = '1.0.5';
+  static const String currentAppVersion = '1.0.6-beta.2';
 
   /// Cached version string initialized from package or fallback.
   static String _cachedVersion = currentAppVersion;
@@ -50,14 +50,17 @@ class AppUpdateService {
     return _cachedVersion;
   }
 
-  /// Compares two semver strings (e.g. '1.0.1' vs '1.0.0').
+  /// Compares two semver strings (e.g. '1.0.1' vs '1.0.0', '1.0.6-beta.1' vs '1.0.5').
   /// Returns 1 if v1 > v2, -1 if v1 < v2, and 0 if equal.
   static int compareVersions(String v1, String v2) {
     final clean1 = v1.replaceAll(RegExp(r'^[vV]'), '').split('+').first.trim();
     final clean2 = v2.replaceAll(RegExp(r'^[vV]'), '').split('+').first.trim();
 
-    final parts1 = clean1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-    final parts2 = clean2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final base1 = clean1.split('-').first;
+    final base2 = clean2.split('-').first;
+
+    final parts1 = base1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final parts2 = base2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
 
     final maxLen = parts1.length > parts2.length
         ? parts1.length
@@ -68,15 +71,32 @@ class AppUpdateService {
       if (p1 > p2) return 1;
       if (p1 < p2) return -1;
     }
+
+    if (clean1 != clean2) {
+      final isPre1 = clean1.contains('-');
+      final isPre2 = clean2.contains('-');
+      if (!isPre1 && isPre2) return 1;
+      if (isPre1 && !isPre2) return -1;
+      return clean1.compareTo(clean2);
+    }
+
     return 0;
   }
 
   /// Queries the public GitHub Releases API to discover newly published APK versions.
-  static Future<AppUpdateInfo?> checkForUpdate() async {
+  /// When [includeBeta] is true, queries all releases (including pre-releases/betas).
+  /// When [includeBeta] is false, queries only formal latest releases.
+  static Future<AppUpdateInfo?> checkForUpdate({
+    bool includeBeta = false,
+  }) async {
     try {
-      final uri = Uri.parse(
-        'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest',
-      );
+      final uri = includeBeta
+          ? Uri.parse(
+              'https://api.github.com/repos/$githubOwner/$githubRepo/releases',
+            )
+          : Uri.parse(
+              'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest',
+            );
 
       final response = await http
           .get(
@@ -93,16 +113,42 @@ class AppUpdateService {
       }
 
       final dynamic decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
+      Map<String, dynamic>? releaseData;
+
+      if (includeBeta && decoded is List && decoded.isNotEmpty) {
+        for (final item in decoded) {
+          if (item is Map<String, dynamic>) {
+            final assets = item['assets'];
+            if (assets is List &&
+                assets.any(
+                  (a) =>
+                      a is Map<String, dynamic> &&
+                      (a['name'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .endsWith('.apk'),
+                )) {
+              releaseData = item;
+              break;
+            }
+          }
+        }
+      } else if (decoded is Map<String, dynamic>) {
+        releaseData = decoded;
+      }
+
+      if (releaseData == null) {
         return null;
       }
 
-      final tagName = (decoded['tag_name'] ?? '').toString();
-      final title = (decoded['name'] ?? tagName).toString();
+      final tagName = (releaseData['tag_name'] ?? '').toString();
+      final title = (releaseData['name'] ?? tagName).toString();
       final body =
-          (decoded['body'] ?? 'Performance improvements and bug fixes.')
+          (releaseData['body'] ?? 'Performance improvements and bug fixes.')
               .toString();
-      final rawPublished = decoded['published_at']?.toString();
+      final isPrerelease = releaseData['prerelease'] == true ||
+          tagName.toLowerCase().contains('beta');
+      final rawPublished = releaseData['published_at']?.toString();
       final publishedAt = rawPublished != null
           ? DateTime.tryParse(rawPublished)
           : null;
@@ -118,7 +164,7 @@ class AppUpdateService {
         return null;
       }
 
-      final assets = decoded['assets'];
+      final assets = releaseData['assets'];
       if (assets is! List || assets.isEmpty) {
         return null;
       }
@@ -151,6 +197,7 @@ class AppUpdateService {
         downloadUrl: apkDownloadUrl,
         fileSizeBytes: apkSize,
         publishedAt: publishedAt,
+        isBeta: isPrerelease,
       );
     } catch (e) {
       debugPrint('[AppUpdateService] Check update error: $e');
@@ -225,8 +272,9 @@ class AppUpdateService {
   static Future<void> checkAndPrompt(
     BuildContext context, {
     bool manual = false,
+    bool includeBeta = false,
   }) async {
-    final update = await checkForUpdate();
+    final update = await checkForUpdate(includeBeta: includeBeta);
     if (!context.mounted) return;
 
     if (update != null) {

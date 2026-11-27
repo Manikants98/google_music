@@ -219,16 +219,18 @@ class NowPlayingSheet extends StatelessWidget {
               body: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
+                    const Spacer(flex: DateTime.april),
                     Center(
                       child: M3EAlbumArt(
                         imageUrl: song.thumbnailUrl,
                         aspectRatio: 1.0,
                         radius: 12,
                         elevation: 2,
+                        glowColor: accent,
                       ),
                     ),
+                    const Spacer(flex: DateTime.august),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -270,10 +272,16 @@ class NowPlayingSheet extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const Spacer(flex: DateTime.december),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: <Widget>[
-                        IconButton(
+                        M3EIconButton(
+                          variant: M3EIconButtonVariant.tonal,
+                          size: M3EIconButtonSize.sm,
+                          shape: M3EIconButtonShapeVariant.square,
+                          width: M3EIconButtonWidth.defaultWidth,
+                          haptic: M3EHapticFeedback.light,
                           icon: Icon(
                             Icons.shuffle_rounded,
                             color: controller.isShuffle
@@ -283,7 +291,12 @@ class NowPlayingSheet extends StatelessWidget {
                           ),
                           onPressed: controller.toggleShuffle,
                         ),
-                        IconButton(
+                        M3EIconButton(
+                          variant: M3EIconButtonVariant.tonal,
+                          size: M3EIconButtonSize.md,
+                          shape: M3EIconButtonShapeVariant.square,
+                          width: M3EIconButtonWidth.defaultWidth,
+                          haptic: M3EHapticFeedback.light,
                           icon: const Icon(
                             Icons.skip_previous_rounded,
                             size: 34,
@@ -293,11 +306,12 @@ class NowPlayingSheet extends StatelessWidget {
                         GestureDetector(
                           onTap: controller.togglePlayPause,
                           child: Container(
-                            width: 64,
-                            height: 64,
+                            width: 70,
+                            height: 70,
                             decoration: BoxDecoration(
                               color: accent,
-                              shape: BoxShape.circle,
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: <BoxShadow>[
                                 BoxShadow(
                                   color: Colors.black.withValues(
@@ -338,11 +352,21 @@ class NowPlayingSheet extends StatelessWidget {
                             ),
                           ),
                         ),
-                        IconButton(
+                        M3EIconButton(
+                          variant: M3EIconButtonVariant.tonal,
+                          size: M3EIconButtonSize.md,
+                          shape: M3EIconButtonShapeVariant.square,
+                          width: M3EIconButtonWidth.defaultWidth,
+                          haptic: M3EHapticFeedback.light,
                           icon: const Icon(Icons.skip_next_rounded, size: 34),
                           onPressed: controller.playNext,
                         ),
-                        IconButton(
+                        M3EIconButton(
+                          variant: M3EIconButtonVariant.tonal,
+                          size: M3EIconButtonSize.sm,
+                          shape: M3EIconButtonShapeVariant.square,
+                          width: M3EIconButtonWidth.defaultWidth,
+                          haptic: M3EHapticFeedback.light,
                           icon: Icon(
                             controller.loopMode == LoopMode.one
                                 ? Icons.repeat_one_rounded
@@ -356,6 +380,8 @@ class NowPlayingSheet extends StatelessWidget {
                         ),
                       ],
                     ),
+
+                    const Spacer(flex: DateTime.december),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: M3EButtonGroup(
@@ -407,6 +433,7 @@ class NowPlayingSheet extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),

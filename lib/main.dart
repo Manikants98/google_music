@@ -3,6 +3,7 @@ import 'package:audio_session/audio_session.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -284,6 +285,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final theme = M3ETheme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final accent = context.select<MusicPlayerController, Color>(
+      (c) => c.dynamicAccentColor,
+    );
     final hasActiveSong = context.select<MusicPlayerController, bool>(
       (c) => c.currentSong != null,
     );
@@ -295,32 +300,43 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (hasActiveSong) const MiniPlayerPill(),
-          M3ENavigationBar(
-            selectedIndex: _selectedTab,
-            onDestinationSelected: _onTabSelected,
-            size: M3ENavBarSize.small,
-            destinations: const <M3ENavigationBarDestination>[
-              M3ENavigationBarDestination(
-                icon: Icon(M3EIcons.home_outlined),
-                selectedIcon: Icon(M3EIcons.home_filled),
-                label: 'Home',
+          Container(
+            decoration: BoxDecoration(color: colorScheme.surfaceContainer),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: GNav(
+                  selectedIndex: _selectedTab,
+                  onTabChange: _onTabSelected,
+                  gap: 8,
+                  activeColor: accent,
+                  iconSize: 22,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  duration: const Duration(milliseconds: 350),
+                  tabBackgroundColor: accent.withValues(alpha: 0.16),
+                  color: colorScheme.onSurfaceVariant,
+                  tabBorderRadius: 24,
+                  textStyle: TextStyle(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                  tabs: const <GButton>[
+                    GButton(icon: Icons.home_rounded, text: 'Home'),
+                    GButton(icon: Icons.search_rounded, text: 'Search'),
+                    GButton(icon: Icons.library_music_rounded, text: 'Library'),
+                    GButton(icon: Icons.settings_rounded, text: 'Settings'),
+                  ],
+                ),
               ),
-              M3ENavigationBarDestination(
-                icon: Icon(M3EIcons.search_outlined),
-                selectedIcon: Icon(M3EIcons.search),
-                label: 'Search',
-              ),
-              M3ENavigationBarDestination(
-                icon: Icon(M3EIcons.library_music_outlined),
-                selectedIcon: Icon(M3EIcons.library_music),
-                label: 'Library',
-              ),
-              M3ENavigationBarDestination(
-                icon: Icon(M3EIcons.settings_outlined),
-                selectedIcon: Icon(M3EIcons.settings),
-                label: 'Settings',
-              ),
-            ],
+            ),
           ),
         ],
       ),
