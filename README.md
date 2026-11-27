@@ -9,7 +9,7 @@
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Material 3 Expressive](https://img.shields.io/badge/UI-Material_3_Expressive-6750A4?style=for-the-badge&logo=material-design&logoColor=white)](https://m3.material.io)
 [![Android](https://img.shields.io/badge/Android-5.0+-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://android.com)
-[![Version](https://img.shields.io/badge/Version-v1.0.5-brightgreen?style=for-the-badge)](https://github.com/Manikants98/google_music/releases)
+[![Version](https://img.shields.io/badge/Version-v1.0.6-brightgreen?style=for-the-badge)](https://github.com/Manikants98/google_music/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 </div>
