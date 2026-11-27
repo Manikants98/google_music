@@ -314,9 +314,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                             alpha: 0.7,
                           ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: accent.withValues(alpha: 0.25),
-                          ),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,

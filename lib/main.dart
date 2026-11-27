@@ -330,10 +330,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           if (hasActiveSong)
             Padding(
               padding: EdgeInsets.fromLTRB(
-                isDesktop ? 24 : 8,
+                isDesktop ? 24 : 5,
                 0,
-                isDesktop ? 24 : 8,
-                8,
+                isDesktop ? 24 : 5,
+                2,
               ),
               child: Center(
                 child: ConstrainedBox(
@@ -387,7 +387,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                               icon: Icons.library_music_rounded,
                               text: 'Library',
                             ),
-                            GButton(icon: Icons.settings_rounded, text: 'Settings'),
+                            GButton(
+                              icon: Icons.settings_rounded,
+                              text: 'Settings',
+                            ),
                           ],
                         ),
                       ),

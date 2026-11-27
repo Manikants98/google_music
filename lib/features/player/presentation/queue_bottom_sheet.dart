@@ -1012,12 +1012,6 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                     ? const Color(0xFF1B1B1B)
                     : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.brightness == Brightness.dark
-                      ? const Color(0xFF2C2C2C)
-                      : colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  width: 1,
-                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

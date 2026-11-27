@@ -338,10 +338,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: item.color.withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
                                   ),
                                   child: Row(
                                     mainAxisAlignment:

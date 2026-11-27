@@ -87,10 +87,7 @@ class M3EAlbumArt extends StatelessWidget {
               height: outerCircleSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: accent.withValues(alpha: isDark ? 0.14 : 0.09),
-                  width: 1.5,
-                ),
+                color: accent.withValues(alpha: isDark ? 0.08 : 0.05),
               ),
             ),
           Container(
@@ -99,10 +96,6 @@ class M3EAlbumArt extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: accent.withValues(alpha: isDark ? 0.20 : 0.14),
-              border: Border.all(
-                color: accent.withValues(alpha: isDark ? 0.30 : 0.22),
-                width: 1.5,
-              ),
               boxShadow: effectiveWidth >= 100
                   ? <BoxShadow>[
                       BoxShadow(

@@ -125,12 +125,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               alpha: 0.12,
                             ),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: controller.dynamicAccentColor.withValues(
-                                alpha: 0.25,
-                              ),
-                              width: 1,
-                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -163,8 +157,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 4,
-                    gap: 2,
+                    innerRadius: 0,
+                    gap: 0,
                     itemCount: playlists.length,
                     onTap: (int index) {
                       Navigator.of(context).push(
@@ -358,8 +352,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 4,
-                    gap: 2,
+                    innerRadius: 0,
+                    gap: 0,
                     itemCount: liked.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(
@@ -404,12 +398,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             alpha: 0.12,
                           ),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: controller.dynamicAccentColor.withValues(
-                              alpha: 0.25,
-                            ),
-                            width: 1,
-                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -435,8 +423,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 4,
-                    gap: 2,
+                    innerRadius: 0,
+                    gap: 0,
                     itemCount: downloaded.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(
@@ -524,8 +512,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: M3EList(
                     color: colorScheme.surfaceContainerHighest,
                     outerRadius: 12,
-                    innerRadius: 4,
-                    gap: 2,
+                    innerRadius: 0,
+                    gap: 0,
                     itemCount: history.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(

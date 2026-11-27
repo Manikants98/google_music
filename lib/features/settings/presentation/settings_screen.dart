@@ -153,7 +153,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<MusicPlayerController>();
     final accent = controller.dynamicAccentColor;
 
@@ -199,10 +198,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.25),
-                      width: 1,
-                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -247,10 +242,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         offset: const Offset(0, 2),
                       ),
                     ],
-                    border: Border.all(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      width: 1.5,
-                    ),
                   ),
                 ),
               ),
@@ -618,8 +609,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: M3EList(
               color: colorScheme.surfaceContainerHighest,
               outerRadius: 12,
-              innerRadius: 4,
-              gap: 2,
+              innerRadius: 0,
+              gap: 0,
               itemCount: items.length,
               itemBuilder: (BuildContext context, int index) {
                 final item = items[index];

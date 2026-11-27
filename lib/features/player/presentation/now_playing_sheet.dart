@@ -92,16 +92,6 @@ class NowPlayingSheet extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
-                        IconButton(
-                          icon: const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 32,
-                          ),
-                          tooltip: 'Minimize',
-                          color: colorScheme.onSurface,
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Google Music',

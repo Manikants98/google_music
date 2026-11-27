@@ -101,9 +101,6 @@ class AddToPlaylistSheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: accent.withValues(alpha: 0.25),
-                  ),
                 ),
                 child: Row(
                   children: <Widget>[

@@ -189,9 +189,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
           borderRadius: BorderRadius.circular(10),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(
-                alpha: isDark ? 0.35 : 0.08,
-              ),
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -215,150 +213,157 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
               ),
               child: Stack(
                 children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: ValueListenableBuilder<double>(
-                          valueListenable: _dragNotifier,
-                          builder: (context, dragX, child) {
-                            final double opacity = (1.0 - (dragX.abs() / 130.0))
-                                .clamp(0.25, 1.0);
-                            return Transform.translate(
-                              offset: Offset(dragX, 0),
-                              child: Opacity(opacity: opacity, child: child),
-                            );
-                          },
-                          child: Row(
-                            children: <Widget>[
-                              M3EAlbumArt(
-                                imageUrl: song.thumbnailUrl,
-                                size: 42,
-                                radius: 4,
-                                elevation: 0,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    M3EMarqueeText(
-                                      text: song.title,
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    ValueListenableBuilder<AudioRouteInfo>(
-                                      valueListenable: AudioRouteService
-                                          .instance
-                                          .currentRouteNotifier,
-                                      builder: (context, route, _) {
-                                        final isExternal =
-                                            route.type !=
-                                            AudioRouteType.speaker;
-                                        return Row(
-                                          children: <Widget>[
-                                            if (isExternal) ...<Widget>[
-                                              Icon(
-                                                route.icon,
-                                                size: 11,
-                                                color: accent,
-                                              ),
-                                              const SizedBox(width: 4),
-                                            ],
-                                            Expanded(
-                                              child: Text(
-                                                isExternal
-                                                    ? '${song.artist} • ${route.name}'
-                                                    : song.artist,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      color: isExternal
-                                                          ? accent
-                                                          : colorScheme
-                                                                .onSurfaceVariant,
-                                                      fontWeight: isExternal
-                                                          ? FontWeight.w600
-                                                          : FontWeight.w400,
-                                                      fontSize: 11,
-                                                    ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: ValueListenableBuilder<double>(
+                            valueListenable: _dragNotifier,
+                            builder: (context, dragX, child) {
+                              final double opacity =
+                                  (1.0 - (dragX.abs() / 130.0)).clamp(
+                                    0.25,
+                                    1.0,
+                                  );
+                              return Transform.translate(
+                                offset: Offset(dragX, 0),
+                                child: Opacity(opacity: opacity, child: child),
+                              );
+                            },
+                            child: Row(
+                              children: <Widget>[
+                                M3EAlbumArt(
+                                  imageUrl: song.thumbnailUrl,
+                                  size: 42,
+                                  radius: 4,
+                                  elevation: 0,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      M3EMarqueeText(
+                                        text: song.title,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      ValueListenableBuilder<AudioRouteInfo>(
+                                        valueListenable: AudioRouteService
+                                            .instance
+                                            .currentRouteNotifier,
+                                        builder: (context, route, _) {
+                                          final isExternal =
+                                              route.type !=
+                                              AudioRouteType.speaker;
+                                          return Row(
+                                            children: <Widget>[
+                                              if (isExternal) ...<Widget>[
+                                                Icon(
+                                                  route.icon,
+                                                  size: 11,
+                                                  color: accent,
+                                                ),
+                                                const SizedBox(width: 4),
+                                              ],
+                                              Expanded(
+                                                child: Text(
+                                                  isExternal
+                                                      ? '${song.artist} • ${route.name}'
+                                                      : song.artist,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: isExternal
+                                                            ? accent
+                                                            : colorScheme
+                                                                  .onSurfaceVariant,
+                                                        fontWeight: isExternal
+                                                            ? FontWeight.w600
+                                                            : FontWeight.w400,
+                                                        fontSize: 11,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: controller.status == PlayerStatus.loading
-                            ? SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: M3EProgressIndicator.circular(
-                                  strokeWidth: 2.5,
-                                  trackStrokeWidth: 2.5,
-                                  color: accent,
-                                  trackColor: accent.withValues(alpha: 0.22),
+                        IconButton(
+                          icon: controller.status == PlayerStatus.loading
+                              ? SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: M3EProgressIndicator.circular(
+                                    strokeWidth: 2.5,
+                                    trackStrokeWidth: 2.5,
+                                    color: accent,
+                                    trackColor: accent.withValues(alpha: 0.22),
+                                  ),
+                                )
+                              : Icon(
+                                  controller.isPlaying
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  color: colorScheme.onSurface,
+                                  size: 28,
                                 ),
+                          onPressed: controller.togglePlayPause,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.skip_next_rounded, size: 24),
+                          onPressed: controller.playNext,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: ValueListenableBuilder<Duration>(
+                      valueListenable: controller.positionNotifier,
+                      builder: (context, pos, child) {
+                        final dur = controller.duration;
+                        final progress = dur.inMilliseconds > 0
+                            ? (pos.inMilliseconds / dur.inMilliseconds).clamp(
+                                0.0,
+                                1.0,
                               )
-                            : Icon(
-                                controller.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: colorScheme.onSurface,
-                                size: 28,
-                              ),
-                        onPressed: controller.togglePlayPause,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.skip_next_rounded, size: 24),
-                        onPressed: controller.playNext,
-                      ),
-                    ],
+                            : 0.0;
+                        return LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 2.5,
+                          backgroundColor: accent.withValues(alpha: 0.18),
+                          valueColor: AlwaysStoppedAnimation<Color>(accent),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: ValueListenableBuilder<Duration>(
-                    valueListenable: controller.positionNotifier,
-                    builder: (context, pos, child) {
-                      final dur = controller.duration;
-                      final progress = dur.inMilliseconds > 0
-                          ? (pos.inMilliseconds / dur.inMilliseconds).clamp(
-                              0.0,
-                              1.0,
-                            )
-                          : 0.0;
-                      return LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 2.5,
-                        backgroundColor: accent.withValues(alpha: 0.18),
-                        valueColor: AlwaysStoppedAnimation<Color>(accent),
-                      );
-                    },
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
