@@ -614,9 +614,9 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isDesktop ? 4 : 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: isDesktop ? 0.76 : 0.72,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 14,
+        childAspectRatio: isDesktop ? 0.8 : 0.75,
       ),
       itemCount: _playlistResults.length,
       itemBuilder: (context, index) {
@@ -640,17 +640,8 @@ class _SearchScreenState extends State<SearchScreen> {
   ) {
     return GestureDetector(
       onTap: () => _onPlaylistTapped(playlist),
-      child: Container(
+      child: SizedBox(
         width: width,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.15),
-            width: 1,
-          ),
-        ),
-        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -658,7 +649,7 @@ class _SearchScreenState extends State<SearchScreen> {
             AspectRatio(
               aspectRatio: 1.0,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: playlist.thumbnailUrl != null &&
                         playlist.thumbnailUrl!.isNotEmpty
                     ? Image.network(
@@ -668,7 +659,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: colorScheme.surfaceContainerHigh,
                           child: Icon(
                             Icons.queue_music_rounded,
-                            size: 38,
+                            size: 40,
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -677,13 +668,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         color: colorScheme.surfaceContainerHigh,
                         child: Icon(
                           Icons.queue_music_rounded,
-                          size: 38,
+                          size: 40,
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               playlist.name,
               maxLines: 1,

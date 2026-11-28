@@ -699,17 +699,8 @@ class SearchScreenSkeleton extends StatelessWidget {
     int index, {
     double? width,
   }) {
-    return Container(
+    return SizedBox(
       width: width,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.15),
-          width: 1,
-        ),
-      ),
-      padding: const EdgeInsets.all(10),
       child: M3EShimmer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -720,20 +711,20 @@ class SearchScreenSkeleton extends StatelessWidget {
               child: M3ESkeletonBox(
                 width: double.infinity,
                 height: double.infinity,
-                radius: 10,
+                radius: 12,
                 color: colorScheme.surfaceContainerHigh,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             M3ESkeletonBox(
-              width: (index % 2 == 0) ? 95 : 80,
-              height: 12,
-              radius: 3,
+              width: (index % 2 == 0) ? 100 : 80,
+              height: 13,
+              radius: 4,
               color: colorScheme.surfaceContainerHigh,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             M3ESkeletonBox(
-              width: (index % 2 == 0) ? 60 : 45,
+              width: (index % 2 == 0) ? 65 : 50,
               height: 10,
               radius: 3,
               color: colorScheme.surfaceContainerHigh,
@@ -755,9 +746,9 @@ class SearchScreenSkeleton extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: isDesktop ? 4 : 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: isDesktop ? 0.76 : 0.72,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 14,
+          childAspectRatio: isDesktop ? 0.8 : 0.75,
         ),
         itemCount: 6,
         itemBuilder: (context, index) {
