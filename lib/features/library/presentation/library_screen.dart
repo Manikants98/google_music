@@ -22,12 +22,12 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   String _activeTab = 'Library';
 
-  final List<_LibraryTabItem> _tabs = const <_LibraryTabItem>[
-    _LibraryTabItem(id: 'Library', label: 'Library', icon: Icons.graphic_eq_rounded),
-    _LibraryTabItem(id: 'Playlists', label: 'Playlists', icon: Icons.queue_music_rounded),
-    _LibraryTabItem(id: 'Liked', label: 'Liked', icon: Icons.favorite_rounded),
-    _LibraryTabItem(id: 'Downloaded', label: 'Downloaded', icon: Icons.offline_pin_rounded),
-    _LibraryTabItem(id: 'History', label: 'History', icon: Icons.history_rounded),
+  final List<String> _tabs = const <String>[
+    'Library',
+    'Playlists',
+    'Liked',
+    'Downloaded',
+    'History',
   ];
 
   @override
@@ -43,7 +43,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final speedDials = controller.getSpeedDialSongs();
 
     final isDesktop = MediaQuery.sizeOf(context).width > 850;
-    final hPad = isDesktop ? 24.0 : 16.0;
+    final hPad = isDesktop ? 24.0 : 12.0;
     final accent = controller.dynamicAccentColor;
 
     return Scaffold(
@@ -70,10 +70,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       body: CustomScrollView(
         slivers: <Widget>[
-          // Filter Chips Carousel
+          // Standard M3E Filter Chips (Identical pattern to HomeScreen)
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 42,
+              height: 38,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -81,15 +81,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final tab = _tabs[index];
-                  final isSelected = tab.id == _activeTab;
-                  return _buildFilterChip(
-                    context: context,
-                    tab: tab,
-                    isSelected: isSelected,
-                    accent: accent,
-                    onTap: () {
+                  final isSelected = tab == _activeTab;
+                  return M3EChip(
+                    label: tab,
+                    type: M3EChipType.filter,
+                    selected: isSelected,
+                    onPressed: () {
                       setState(() {
-                        _activeTab = tab.id;
+                        _activeTab = tab;
                       });
                     },
                   );
@@ -98,13 +97,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 14)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
           // ----------------------------------------------------
           // MAIN DASHBOARD (When 'Library' tab is active)
           // ----------------------------------------------------
           if (_activeTab == 'Library') ...<Widget>[
-            // Bento Grid Cards
+            // Bento Grid Cards (matching app's 12dp card border radius)
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: hPad),
               sliver: SliverToBoxAdapter(
@@ -122,9 +121,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-            // Featured / Most Played Banner Card
+            // Featured / Most Played Banner Card (12dp radius, 6dp inner art)
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: hPad),
               sliver: SliverToBoxAdapter(
@@ -136,58 +135,74 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   history: history,
                   accent: accent,
                   colorScheme: colorScheme,
+                  theme: theme,
                 ),
               ),
             ),
 
-            // Recently Played Section (Horizontal Carousel)
+            // Recently Played Carousel (using app's standard section header and 136dp M3EAlbumArt)
             if (history.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        'Recently Played',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => setState(() => _activeTab = 'History'),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          child: Text(
-                            'See all',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: accent,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                child: _buildSectionHeader(
+                  context: context,
+                  label: 'ACTIVITY',
+                  title: 'Recently played',
+                  extraAction: M3EButton(
+                    label: const Text('See all'),
+                    style: M3EButtonStyle.tonal,
+                    size: M3EButtonSize.sm,
+                    onPressed: () => setState(() => _activeTab = 'History'),
                   ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 172,
+                  height: 195,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.symmetric(horizontal: hPad),
                     itemCount: history.take(12).length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    separatorBuilder: (context, index) => const SizedBox(width: 14),
                     itemBuilder: (context, index) {
                       final song = history[index];
-                      return _buildRecentSongCard(
-                        context: context,
-                        song: song,
-                        queue: history,
-                        colorScheme: colorScheme,
+                      return GestureDetector(
+                        onTap: () {
+                          M3ESongTile.handleTap(context, song, queue: history);
+                        },
+                        child: SizedBox(
+                          width: 136,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              M3EAlbumArt(
+                                imageUrl: song.thumbnailUrl,
+                                size: 136,
+                                radius: 6,
+                                elevation: 2,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                song.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                song.artist,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -197,44 +212,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
             // Playlists Section Header
             SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'Your Playlists',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => _showCreatePlaylistDialog(context, controller),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(Icons.add_rounded, size: 15, color: accent),
-                            const SizedBox(width: 4),
-                            Text(
-                              'New',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: accent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+              child: _buildSectionHeader(
+                context: context,
+                label: 'COLLECTIONS',
+                title: 'Your playlists',
+                extraAction: M3EButton(
+                  label: const Text('New'),
+                  style: M3EButtonStyle.tonal,
+                  size: M3EButtonSize.sm,
+                  onPressed: () => _showCreatePlaylistDialog(context, controller),
                 ),
               ),
             ),
@@ -271,31 +257,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
           // ----------------------------------------------------
           if (_activeTab == 'Playlists') ...<Widget>[
             SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'All Playlists (${playlists.length})',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: accent,
-                        foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                        visualDensity: VisualDensity.compact,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Create', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                      onPressed: () => _showCreatePlaylistDialog(context, controller),
-                    ),
-                  ],
+              child: _buildSectionHeader(
+                context: context,
+                label: 'CUSTOM MIXES',
+                title: 'All playlists (${playlists.length})',
+                extraAction: M3EButton(
+                  label: const Text('Create'),
+                  style: M3EButtonStyle.tonal,
+                  size: M3EButtonSize.sm,
+                  onPressed: () => _showCreatePlaylistDialog(context, controller),
                 ),
               ),
             ),
@@ -323,7 +293,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       children: <Widget>[
                         Icon(
                           Icons.queue_music_rounded,
-                          size: 64,
+                          size: 56,
                           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                         ),
                         const SizedBox(height: 12),
@@ -333,19 +303,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Create custom playlists like "Gym Vibes" or "Chill Beats"',
+                          'Create custom mixes to organize your favorite tracks',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 14),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: accent,
-                            foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                          icon: const Icon(Icons.add_rounded),
+                        M3EButton(
                           label: const Text('Create Playlist'),
+                          style: M3EButtonStyle.tonal,
                           onPressed: () => _showCreatePlaylistDialog(context, controller),
                         ),
                       ],
@@ -360,31 +325,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           // ----------------------------------------------------
           if (_activeTab == 'Liked') ...<Widget>[
             SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'Liked Songs (${liked.length})',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (liked.isNotEmpty)
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                          visualDensity: VisualDensity.compact,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
-                        icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                        label: const Text('Play All', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              child: _buildSectionHeader(
+                context: context,
+                label: 'FAVORITES',
+                title: 'Liked songs (${liked.length})',
+                extraAction: liked.isNotEmpty
+                    ? M3EButton(
+                        label: const Text('Play all'),
+                        style: M3EButtonStyle.tonal,
+                        size: M3EButtonSize.sm,
                         onPressed: () => controller.playSong(liked.first, newQueue: liked),
-                      ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
             ),
             if (liked.isNotEmpty)
@@ -415,7 +367,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     children: <Widget>[
                       Icon(
                         Icons.favorite_outline_rounded,
-                        size: 64,
+                        size: 56,
                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                       ),
                       const SizedBox(height: 12),
@@ -439,33 +391,24 @@ class _LibraryScreenState extends State<LibraryScreen> {
           // ----------------------------------------------------
           if (_activeTab == 'Downloaded') ...<Widget>[
             SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'Offline Music (${downloaded.length})',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+              child: _buildSectionHeader(
+                context: context,
+                label: 'OFFLINE STORAGE',
+                title: 'Downloaded (${downloaded.length})',
+                extraAction: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    controller.offlineService.formattedStorageUsed,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        controller.offlineService.formattedStorageUsed,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -508,7 +451,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     children: <Widget>[
                       Icon(
                         Icons.download_for_offline_outlined,
-                        size: 64,
+                        size: 56,
                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                       ),
                       const SizedBox(height: 12),
@@ -518,7 +461,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Download songs for offline listening from the track menu',
+                        'Download tracks for offline listening from the track menu',
                         style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ],
@@ -532,26 +475,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           // ----------------------------------------------------
           if (_activeTab == 'History') ...<Widget>[
             SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'Playback History (${history.length})',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (history.isNotEmpty)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                        icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                        label: const Text('Clear', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: _buildSectionHeader(
+                context: context,
+                label: 'LISTENING HISTORY',
+                title: 'Playback history (${history.length})',
+                extraAction: history.isNotEmpty
+                    ? M3EButton(
+                        label: const Text('Clear'),
+                        style: M3EButtonStyle.tonal,
+                        size: M3EButtonSize.sm,
                         onPressed: () => _confirmClearHistory(context, controller),
-                      ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
             ),
             if (history.isNotEmpty)
@@ -582,7 +517,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     children: <Widget>[
                       Icon(
                         Icons.history_rounded,
-                        size: 64,
+                        size: 56,
                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                       ),
                       const SizedBox(height: 12),
@@ -608,55 +543,62 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // ----------------------------------------------------
-  // FILTER CHIP WIDGET
+  // SECTION HEADER (App-wide unified pattern)
   // ----------------------------------------------------
-  Widget _buildFilterChip({
+  Widget _buildSectionHeader({
     required BuildContext context,
-    required _LibraryTabItem tab,
-    required bool isSelected,
-    required Color accent,
-    required VoidCallback onTap,
+    required String label,
+    required String title,
+    Widget? extraAction,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final fgColor = isSelected
-        ? (accent.computeLuminance() > 0.5 ? Colors.black : Colors.white)
-        : colorScheme.onSurface;
-    final bgColor = isSelected ? accent : colorScheme.surfaceContainerHighest;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDesktop = MediaQuery.sizeOf(context).width > 850;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(tab.icon, size: 16, color: fgColor),
-              const SizedBox(width: 6),
-              Text(
-                tab.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: fgColor,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        isDesktop ? 24 : 12,
+        20,
+        isDesktop ? 24 : 12,
+        10,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  label.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          ?extraAction,
+        ],
       ),
     );
   }
 
   // ----------------------------------------------------
-  // BENTO GRID DASHBOARD WIDGET
+  // BENTO GRID DASHBOARD WIDGET (12dp card border radius)
   // ----------------------------------------------------
   Widget _buildBentoGrid({
     required BuildContext context,
@@ -673,26 +615,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
       children: <Widget>[
         // Top Row: Tall Liked Card + (Offline & History Stack)
         SizedBox(
-          height: 172,
+          height: 160,
           child: Row(
             children: <Widget>[
-              // Left: Liked Songs Hero Tall Card
+              // Left: Liked Songs Hero Tall Card (12dp radius)
               Expanded(
                 flex: 5,
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => setState(() => _activeTab = 'Liked'),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      height: 172,
-                      padding: const EdgeInsets.all(16),
+                      height: 160,
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Color.alphaBlend(
-                          accent.withValues(alpha: 0.18),
+                          accent.withValues(alpha: 0.16),
                           colorScheme.surfaceContainerHighest,
                         ),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,24 +643,24 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
                               Container(
-                                width: 44,
-                                height: 44,
+                                width: 38,
+                                height: 38,
                                 decoration: BoxDecoration(
-                                  color: accent.withValues(alpha: 0.22),
-                                  shape: BoxShape.circle,
+                                  color: accent.withValues(alpha: 0.20),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Center(
                                   child: Icon(
                                     Icons.favorite_rounded,
                                     color: accent,
-                                    size: 24,
+                                    size: 20,
                                   ),
                                 ),
                               ),
                               Icon(
                                 Icons.arrow_forward_rounded,
-                                size: 18,
-                                color: accent.withValues(alpha: 0.7),
+                                size: 16,
+                                color: accent.withValues(alpha: 0.65),
                               ),
                             ],
                           ),
@@ -726,17 +668,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           Text(
                             '$likedCount',
                             style: TextStyle(
-                              fontSize: 36,
+                              fontSize: 32,
                               fontWeight: FontWeight.w900,
                               color: colorScheme.onSurface,
                               height: 1.0,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
                             'Liked songs',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -748,9 +690,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
 
-              // Right: Stack of Offline & History Cards
+              // Right: Stack of Offline & History Cards (12dp radius, 76dp each)
               Expanded(
                 flex: 5,
                 child: Column(
@@ -761,29 +703,29 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () => setState(() => _activeTab = 'Downloaded'),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: <Widget>[
                                 Container(
-                                  width: 40,
-                                  height: 40,
+                                  width: 36,
+                                  height: 36,
                                   decoration: BoxDecoration(
                                     color: colorScheme.surfaceContainerHigh,
-                                    shape: BoxShape.circle,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
                                     Icons.offline_pin_rounded,
                                     color: accent,
-                                    size: 22,
+                                    size: 20,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,7 +734,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       Text(
                                         'Offline',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                           color: colorScheme.onSurface,
                                         ),
@@ -801,7 +743,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       Text(
                                         downloadedCount == 0 ? 'Downloaded' : '$downloadedCount songs',
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           color: colorScheme.onSurfaceVariant,
                                         ),
                                       ),
@@ -815,7 +757,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
 
                     // History Card
                     Expanded(
@@ -823,29 +765,29 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () => setState(() => _activeTab = 'History'),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: <Widget>[
                                 Container(
-                                  width: 40,
-                                  height: 40,
+                                  width: 36,
+                                  height: 36,
                                   decoration: BoxDecoration(
                                     color: colorScheme.surfaceContainerHigh,
-                                    shape: BoxShape.circle,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
                                     Icons.history_rounded,
                                     color: colorScheme.onSurfaceVariant,
-                                    size: 22,
+                                    size: 20,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,7 +796,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       Text(
                                         'History',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                           color: colorScheme.onSurface,
                                         ),
@@ -863,7 +805,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       Text(
                                         historyCount == 0 ? 'Recent' : '$historyCount played',
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           color: colorScheme.onSurfaceVariant,
                                         ),
                                       ),
@@ -883,11 +825,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
-        // Bottom Row: Playlists & Top Tracks
+        // Bottom Row: Playlists & Top Tracks (12dp radius, 68dp each)
         SizedBox(
-          height: 76,
+          height: 68,
           child: Row(
             children: <Widget>[
               // Playlists Card
@@ -896,26 +838,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => setState(() => _activeTab = 'Playlists'),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: <Widget>[
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 34,
+                            height: 34,
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHigh,
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.queue_music_rounded,
                               color: colorScheme.onSurfaceVariant,
-                              size: 20,
+                              size: 18,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -927,7 +869,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 Text(
                                   'Playlists',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: colorScheme.onSurface,
                                   ),
@@ -936,7 +878,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 Text(
                                   '$playlistCount created',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
@@ -950,9 +892,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
 
-              // Top Tracks / Speed Dial Card
+              // Top Tracks Card
               Expanded(
                 child: Material(
                   color: Colors.transparent,
@@ -966,26 +908,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         controller.playSong(controller.likedSongs.first, newQueue: controller.likedSongs);
                       }
                     },
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: <Widget>[
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 34,
+                            height: 34,
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHigh,
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.trending_up_rounded,
                               color: accent,
-                              size: 20,
+                              size: 18,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -997,7 +939,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 Text(
                                   'Top Tracks',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: colorScheme.onSurface,
                                   ),
@@ -1006,7 +948,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 Text(
                                   'Speed Dials',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
@@ -1027,7 +969,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // ----------------------------------------------------
-  // FEATURED "★ MOST PLAYED" HERO CARD
+  // FEATURED "★ MOST PLAYED" HERO CARD (12dp radius, 6dp inner art)
   // ----------------------------------------------------
   Widget _buildFeaturedMostPlayedCard({
     required BuildContext context,
@@ -1037,6 +979,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     required List<SongModel> history,
     required Color accent,
     required ColorScheme colorScheme,
+    required ThemeData theme,
   }) {
     final featuredSong = speedDials.isNotEmpty
         ? speedDials.first
@@ -1046,38 +989,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     if (featuredSong == null) {
       return Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: <Widget>[
             Container(
-              width: 50,
-              height: 50,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.16),
-                shape: BoxShape.circle,
+                color: accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.explore_rounded, color: accent, size: 28),
+              child: Icon(Icons.explore_rounded, color: accent, size: 24),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'Explore & Play Music',
+                    'Explore Music',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Search for your favorite tracks to populate your library',
+                    'Search & play tracks to populate your library',
                     style: TextStyle(
                       fontSize: 12,
                       color: colorScheme.onSurfaceVariant,
@@ -1087,7 +1030,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.search_rounded, color: accent),
+              icon: Icon(Icons.search_rounded, color: accent, size: 22),
               onPressed: widget.onSearchTapped,
             ),
           ],
@@ -1100,44 +1043,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
         : (history.isNotEmpty ? history : liked);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: <Widget>[
-          // Square Artwork
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              width: 90,
-              height: 90,
-              child: featuredSong.thumbnailUrl.isNotEmpty
-                  ? Image.network(
-                      featuredSong.thumbnailUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, err, stack) => Container(
-                        color: colorScheme.surfaceContainerHigh,
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          color: colorScheme.onSurfaceVariant,
-                          size: 32,
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: colorScheme.surfaceContainerHigh,
-                      child: Icon(
-                        Icons.music_note_rounded,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 32,
-                      ),
-                    ),
-            ),
+          // Square Artwork (using standard M3EAlbumArt with 6dp radius)
+          M3EAlbumArt(
+            imageUrl: featuredSong.thumbnailUrl,
+            size: 80,
+            radius: 6,
+            elevation: 1,
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
           // Details & Action Buttons
           Expanded(
@@ -1147,75 +1068,63 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: <Widget>[
                 // Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(12),
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     '★ MOST PLAYED',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
                       color: accent,
-                      letterSpacing: 0.8,
+                      letterSpacing: 0.6,
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   featuredSong.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   featuredSong.artist,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Row(
                   children: <Widget>[
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: accent,
-                        foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      icon: const Icon(Icons.play_arrow_rounded, size: 18),
-                      label: const Text(
-                        'Play all',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
+                    M3EButton(
+                      label: const Text('Play all'),
+                      style: M3EButtonStyle.tonal,
+                      size: M3EButtonSize.sm,
                       onPressed: () => controller.playSong(featuredSong, newQueue: queueToPlay),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHigh,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          size: 17,
+                          size: 16,
                           color: colorScheme.onSurface,
                         ),
                         tooltip: 'Shuffle',
@@ -1236,79 +1145,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // ----------------------------------------------------
-  // RECENT SONG HORIZONTAL CARD
-  // ----------------------------------------------------
-  Widget _buildRecentSongCard({
-    required BuildContext context,
-    required SongModel song,
-    required List<SongModel> queue,
-    required ColorScheme colorScheme,
-  }) {
-    return SizedBox(
-      width: 110,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => M3ESongTile.handleTap(context, song, queue: queue),
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  width: 110,
-                  height: 110,
-                  child: song.thumbnailUrl.isNotEmpty
-                      ? Image.network(
-                          song.thumbnailUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, err, stack) => Container(
-                            color: colorScheme.surfaceContainerHigh,
-                            child: Icon(
-                              Icons.music_note_rounded,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          color: colorScheme.surfaceContainerHigh,
-                          child: Icon(
-                            Icons.music_note_rounded,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                song.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                song.artist,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ----------------------------------------------------
-  // PLAYLISTS M3E LIST WIDGET
+  // PLAYLISTS M3E LIST WIDGET (12dp outer, 4dp inner, 2dp gap)
   // ----------------------------------------------------
   Widget _buildPlaylistsM3EList({
     required BuildContext context,
@@ -1343,11 +1180,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 height: 42,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: playlist.thumbnailUrl != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         child: Image.network(
                           playlist.thumbnailUrl!,
                           fit: BoxFit.cover,
@@ -1429,7 +1266,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // ----------------------------------------------------
-  // EMPTY PLAYLISTS PROMPT
+  // EMPTY PLAYLISTS PROMPT (12dp radius)
   // ----------------------------------------------------
   Widget _buildEmptyPlaylistsPrompt({
     required BuildContext context,
@@ -1438,23 +1275,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
     required Color accent,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: <Widget>[
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.queue_music_rounded, color: colorScheme.onSurfaceVariant, size: 22),
+            child: Icon(Icons.queue_music_rounded, color: colorScheme.onSurfaceVariant, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1471,15 +1308,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ],
             ),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: accent,
-              foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
+          M3EButton(
+            label: const Text('Create'),
+            style: M3EButtonStyle.tonal,
+            size: M3EButtonSize.sm,
             onPressed: () => _showCreatePlaylistDialog(context, controller),
-            child: const Text('Create', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
           ),
         ],
       ),
@@ -1504,7 +1337,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         return AlertDialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           icon: Icon(Icons.delete_outline_rounded, color: accent, size: 28),
           title: Text(
             'Remove Download?',
@@ -1531,7 +1364,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: accent,
                 foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
                 Navigator.of(context).pop();
@@ -1542,7 +1375,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       content: Text('Removed "${song.title}" from offline music'),
                       duration: const Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   );
                 }
@@ -1571,7 +1404,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         return AlertDialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 28),
           title: Text(
             'Clear Playback History?',
@@ -1595,7 +1428,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -1626,7 +1459,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         return AlertDialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
             'New Playlist',
             textAlign: TextAlign.center,
@@ -1643,7 +1476,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 filled: true,
                 fillColor: colorScheme.surfaceContainerHigh,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -1661,7 +1494,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: accent,
                 foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
                 final name = textController.text.trim();
@@ -1674,7 +1507,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         content: Text('Created playlist "${created.name}"'),
                         duration: const Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     );
                   }
@@ -1687,16 +1520,4 @@ class _LibraryScreenState extends State<LibraryScreen> {
       },
     );
   }
-}
-
-class _LibraryTabItem {
-  final String id;
-  final String label;
-  final IconData icon;
-
-  const _LibraryTabItem({
-    required this.id,
-    required this.label,
-    required this.icon,
-  });
 }
