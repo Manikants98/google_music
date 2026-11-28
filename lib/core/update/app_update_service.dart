@@ -19,7 +19,7 @@ class AppUpdateService {
   static const String githubRepo = 'google_music';
 
   /// Active application semantic version name.
-  static const String currentAppVersion = '1.0.7-beta.8';
+  static const String currentAppVersion = '1.0.7-beta.9';
 
   /// Cached version string initialized from package or fallback.
   static String _cachedVersion = currentAppVersion;

@@ -240,18 +240,23 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                           ),
                           const SizedBox(width: 12),
 
-                          // Right: Vibrant High-Contrast Play Button FAB
+                          // Right: Vibrant Dynamic Theme Play/Pause FAB
                           Container(
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: isCurrentPlaying ? accent : Colors.white,
+                              color: accent,
                               shape: BoxShape.circle,
                               boxShadow: <BoxShadow>[
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.40),
+                                  color: accent.withValues(alpha: 0.40),
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
@@ -260,9 +265,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                                   ? Icons.pause_rounded
                                   : Icons.play_arrow_rounded,
                               size: 26,
-                              color: isCurrentPlaying
-                                  ? colorScheme.onPrimary
-                                  : Colors.black87,
+                              color: colorScheme.onPrimary,
                             ),
                           ),
                         ],
