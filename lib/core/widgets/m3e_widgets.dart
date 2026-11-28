@@ -162,7 +162,11 @@ class M3EAlbumArt extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius),
-              child: _buildPlaceholder(context, effectiveWidth, effectiveHeight),
+              child: _buildPlaceholder(
+                context,
+                effectiveWidth,
+                effectiveHeight,
+              ),
             ),
           );
         }
@@ -179,11 +183,8 @@ class M3EAlbumArt extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: SongModel.getHighResThumbnail(imageUrl),
               fit: BoxFit.cover,
-              placeholder: (context, url) => _buildPlaceholder(
-                context,
-                effectiveWidth,
-                effectiveHeight,
-              ),
+              placeholder: (context, url) =>
+                  _buildPlaceholder(context, effectiveWidth, effectiveHeight),
               errorWidget: (context, url, error) {
                 final fallbackUrl = url.contains('hq720.jpg')
                     ? url.replaceAll('hq720.jpg', 'hqdefault.jpg')
@@ -786,8 +787,12 @@ class SearchScreenSkeleton extends StatelessWidget {
 
     if (type == SearchSkeletonType.playlists) {
       return GridView.builder(
-        padding:
-            EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          0,
+          horizontalPadding,
+          120,
+        ),
         physics: const BouncingScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: isDesktop ? 4 : 2,
@@ -804,13 +809,19 @@ class SearchScreenSkeleton extends StatelessWidget {
 
     if (type == SearchSkeletonType.songs) {
       return ListView(
-        padding:
-            EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          0,
+          horizontalPadding,
+          120,
+        ),
         physics: const BouncingScrollPhysics(),
         children: <Widget>[
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.45,
+              ),
               borderRadius: BorderRadius.circular(14),
             ),
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -828,8 +839,12 @@ class SearchScreenSkeleton extends StatelessWidget {
 
     // Default: SearchSkeletonType.all
     return ListView(
-      padding:
-          EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        0,
+        horizontalPadding,
+        120,
+      ),
       physics: const BouncingScrollPhysics(),
       children: <Widget>[
         // Songs section title skeleton
