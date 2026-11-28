@@ -53,6 +53,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final session = await AudioSession.instance;
+  try {
+    await session.setActive(false);
+  } catch (_) {}
   await session.configure(const AudioSessionConfiguration.music());
   await AudioRouteService.instance.initialize();
 

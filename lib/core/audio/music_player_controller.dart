@@ -70,6 +70,9 @@ class MusicPlayerController extends ChangeNotifier {
   /// Last saved song track restored from previous session.
   SongModel? _lastSavedSong;
 
+  /// Last saved playback position in milliseconds.
+  Duration? _lastSavedPosition;
+
   /// Active track queue.
   List<SongModel> _queue = <SongModel>[];
 
@@ -306,6 +309,9 @@ class MusicPlayerController extends ChangeNotifier {
       if (_player.duration != null && _player.duration! > Duration.zero) {
         _duration = _player.duration!;
       }
+    } else if (_lastSavedPosition != null && _lastSavedPosition! > Duration.zero) {
+      _position = _lastSavedPosition!;
+      positionNotifier.value = _lastSavedPosition!;
     }
     audioHandler?.setTrackMetadata(
       id: songToRestore.id,
@@ -600,6 +606,7 @@ class MusicPlayerController extends ChangeNotifier {
       }
       if (pos.inSeconds > 0 && pos.inSeconds % 5 == 0) {
         _syncAudioNotification();
+        unawaited(_persistSettings());
       }
       if (_duration > Duration.zero &&
           (_duration - pos).inSeconds <= 35 &&
@@ -750,6 +757,7 @@ class MusicPlayerController extends ChangeNotifier {
     SongModel song, {
     List<SongModel>? newQueue,
     bool? isPlaylistQueue,
+    Duration? initialPosition,
   }) async {
     final currentSession = ++_sessionToken;
 
@@ -797,8 +805,8 @@ class MusicPlayerController extends ChangeNotifier {
 
     _status = PlayerStatus.loading;
     _errorMessage = null;
-    _position = Duration.zero;
-    positionNotifier.value = Duration.zero;
+    _position = initialPosition ?? Duration.zero;
+    positionNotifier.value = initialPosition ?? Duration.zero;
     _bufferedPosition = Duration.zero;
     bufferedPositionNotifier.value = Duration.zero;
     _duration = song.parsedDuration ?? Duration.zero;
@@ -826,7 +834,11 @@ class MusicPlayerController extends ChangeNotifier {
         if (localPath != null && File(localPath).existsSync()) {
           try {
             final audioSource = ja.AudioSource.file(localPath);
-            await _player.setAudioSource(audioSource, preload: true);
+            await _player.setAudioSource(
+              audioSource,
+              preload: true,
+              initialPosition: initialPosition,
+            );
             loadedSuccessfully = true;
           } catch (offlineErr) {
             debugPrint('[MusicPlayer] Local file playback failed: $offlineErr');
@@ -863,7 +875,11 @@ class MusicPlayerController extends ChangeNotifier {
                 'Referer': 'https://www.youtube.com/',
               },
             );
-            await _player.setAudioSource(audioSource, preload: true);
+            await _player.setAudioSource(
+              audioSource,
+              preload: true,
+              initialPosition: initialPosition,
+            );
             song.audioStreamUrl = candidateUrl;
             loadedSuccessfully = true;
             break;
@@ -895,7 +911,11 @@ class MusicPlayerController extends ChangeNotifier {
                 'Referer': 'https://www.youtube.com/',
               },
             );
-            await _player.setAudioSource(freshSource, preload: true);
+            await _player.setAudioSource(
+              freshSource,
+              preload: true,
+              initialPosition: initialPosition,
+            );
             song.audioStreamUrl = freshUrl;
             loadedSuccessfully = true;
             break;
@@ -933,7 +953,10 @@ class MusicPlayerController extends ChangeNotifier {
       await pause();
     } else if (_status == PlayerStatus.paused) {
       if (_player.audioSource == null && _currentSong != null) {
-        await playSong(_currentSong!);
+        await playSong(
+          _currentSong!,
+          initialPosition: _position > Duration.zero ? _position : null,
+        );
       } else {
         await resume();
       }
@@ -945,7 +968,10 @@ class MusicPlayerController extends ChangeNotifier {
   /// Resumes playback.
   Future<void> resume() async {
     if (_player.audioSource == null && _currentSong != null) {
-      await playSong(_currentSong!);
+      await playSong(
+        _currentSong!,
+        initialPosition: _position > Duration.zero ? _position : null,
+      );
       return;
     }
     await _player.play();
@@ -1673,6 +1699,10 @@ class MusicPlayerController extends ChangeNotifier {
           s.isLiked = isSongLiked(s.id);
           _lastSavedSong = s;
         }
+        final lastPosMs = decoded['lastPositionMs'] as int?;
+        if (lastPosMs != null && lastPosMs > 0) {
+          _lastSavedPosition = Duration(milliseconds: lastPosMs);
+        }
       }
     } catch (e) {
       debugPrint('[MusicPlayerController] Error loading settings: $e');
@@ -1688,7 +1718,10 @@ class MusicPlayerController extends ChangeNotifier {
       'isAutoplayEnabled': _isAutoplayEnabled,
       'isDeveloperModeEnabled': _isDeveloperModeEnabled,
       'isBetaChannelEnabled': _isBetaChannelEnabled,
-      if (_currentSong != null) 'lastPlayedSong': _currentSong!.toMap(),
+      if (_currentSong != null) ...<String, Object>{
+        'lastPlayedSong': _currentSong!.toMap(),
+        'lastPositionMs': _position.inMilliseconds,
+      },
     };
     await _writeJsonAtomically(file, data);
   }
