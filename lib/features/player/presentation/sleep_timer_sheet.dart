@@ -1,5 +1,5 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/audio/music_player_controller.dart';
@@ -223,7 +223,7 @@ class SleepTimerSheet extends StatelessWidget {
                             ),
                           ),
                           onPressed: () {
-                            HapticFeedback.lightImpact();
+                            M3EHaptics.trigger(M3EHapticFeedback.light);
                             controller.cancelSleepTimer();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -305,7 +305,7 @@ class SleepTimerSheet extends StatelessWidget {
                     ),
                     InkWell(
                       onTap: () {
-                        HapticFeedback.lightImpact();
+                        M3EHaptics.trigger(M3EHapticFeedback.light);
                         controller.setSleepTimerEndOfTrack();
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -456,7 +456,7 @@ class SleepTimerSheet extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        HapticFeedback.lightImpact();
+        M3EHaptics.trigger(M3EHapticFeedback.light);
         controller.setSleepTimer(duration);
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -591,7 +591,7 @@ class SleepTimerSheet extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    HapticFeedback.lightImpact();
+                    M3EHaptics.trigger(M3EHapticFeedback.light);
                     Navigator.of(dialogContext).pop();
                     Navigator.of(context).pop();
                     controller.setSleepTimer(

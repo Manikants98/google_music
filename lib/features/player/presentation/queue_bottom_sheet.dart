@@ -379,6 +379,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                       Expanded(
                         child: InkWell(
                           onTap: () {
+                            M3EHaptics.trigger(M3EHapticFeedback.light);
                             controller.playSong(song);
                           },
                           borderRadius: BorderRadius.circular(8),
@@ -471,6 +472,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                         color: colorScheme.onSurfaceVariant,
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
+                          M3EHaptics.trigger(M3EHapticFeedback.light);
                           controller.removeFromQueue(index);
                         },
                       ),
@@ -548,6 +550,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
       key: _lyricLineKeys.putIfAbsent(index, () => GlobalKey()),
       child: InkWell(
         onTap: () {
+          M3EHaptics.trigger(M3EHapticFeedback.light);
           _lyricsScrollResumeTimer?.cancel();
           setState(() {
             _userIsScrollingLyrics = false;
@@ -1009,6 +1012,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
+          M3EHaptics.trigger(M3EHapticFeedback.light);
           controller.playSong(targetSong);
         },
         borderRadius: BorderRadius.circular(10),

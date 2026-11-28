@@ -294,6 +294,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _onTabSelected(int index) {
+    M3EHaptics.trigger(M3EHapticFeedback.light);
     if (index == 0 && _selectedTab == 0) {
       /// User tapped Home tab while already on Home: scroll smoothly to top.
       if (_homeScrollController.hasClients &&

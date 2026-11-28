@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -48,6 +47,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
 
   /// Expands full modal now playing sheet.
   void _openNowPlaying(BuildContext context) {
+    M3EHaptics.trigger(M3EHapticFeedback.light);
     NowPlayingSheet.show(context);
   }
 
@@ -164,10 +164,10 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
         final currentX = _dragNotifier.value;
 
         if (currentX < -32.0 || velocity < -350.0) {
-          HapticFeedback.mediumImpact();
+          M3EHaptics.trigger(M3EHapticFeedback.light);
           _animateSlideAndChange(controller, isNext: true);
         } else if (currentX > 32.0 || velocity > 350.0) {
-          HapticFeedback.mediumImpact();
+          M3EHaptics.trigger(M3EHapticFeedback.light);
           _animateSlideAndChange(controller, isNext: false);
         } else {
           _animateReset();
@@ -179,7 +179,7 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
       onVerticalDragEnd: (DragEndDetails details) {
         final velocity = details.primaryVelocity ?? 0.0;
         if (_rawDragY < -24.0 || velocity < -200.0) {
-          HapticFeedback.lightImpact();
+          M3EHaptics.trigger(M3EHapticFeedback.light);
           _openNowPlaying(context);
         }
         _rawDragY = 0.0;
@@ -326,11 +326,17 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
                                   color: colorScheme.onSurface,
                                   size: 28,
                                 ),
-                          onPressed: controller.togglePlayPause,
+                          onPressed: () {
+                            M3EHaptics.trigger(M3EHapticFeedback.light);
+                            controller.togglePlayPause();
+                          },
                         ),
                         IconButton(
                           icon: const Icon(Icons.skip_next_rounded, size: 24),
-                          onPressed: controller.playNext,
+                          onPressed: () {
+                            M3EHaptics.trigger(M3EHapticFeedback.light);
+                            controller.playNext();
+                          },
                         ),
                       ],
                     ),

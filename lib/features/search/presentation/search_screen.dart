@@ -466,6 +466,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 outerRadius: 12,
                 innerRadius: 4,
                 gap: 2,
+                haptic: M3EHapticFeedback.light,
                 itemCount: _searchResults.length.clamp(0, 5),
                 onTap: (int index) => _onSongTapped(_searchResults[index]),
                 itemBuilder: (BuildContext context, int index) {
@@ -546,6 +547,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 outerRadius: 12,
                 innerRadius: 4,
                 gap: 2,
+                haptic: M3EHapticFeedback.light,
                 itemCount: _searchResults.length - 5,
                 onTap: (int index) => _onSongTapped(_searchResults[index + 5]),
                 itemBuilder: (BuildContext context, int index) {
@@ -582,6 +584,7 @@ class _SearchScreenState extends State<SearchScreen> {
           outerRadius: 12,
           innerRadius: 4,
           gap: 2,
+          haptic: M3EHapticFeedback.light,
           itemCount: _searchResults.length,
           onTap: (int index) => _onSongTapped(_searchResults[index]),
           itemBuilder: (BuildContext context, int index) {
@@ -639,7 +642,10 @@ class _SearchScreenState extends State<SearchScreen> {
     double width,
   ) {
     return GestureDetector(
-      onTap: () => _onPlaylistTapped(playlist),
+      onTap: () {
+        M3EHaptics.trigger(M3EHapticFeedback.light);
+        _onPlaylistTapped(playlist);
+      },
       child: SizedBox(
         width: width,
         child: Column(
@@ -734,7 +740,10 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: controller.clearRecentSearches,
+                    onTap: () {
+                      M3EHaptics.trigger(M3EHapticFeedback.light);
+                      controller.clearRecentSearches();
+                    },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                       child: Text(
@@ -759,6 +768,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 outerRadius: 12,
                 innerRadius: 4,
                 gap: 2,
+                haptic: M3EHapticFeedback.light,
                 itemCount: recentSearches.length.clamp(0, 6),
                 onTap: (int index) => _onSongTapped(recentSearches[index]),
                 itemBuilder: (BuildContext context, int index) {
@@ -807,7 +817,10 @@ class _SearchScreenState extends State<SearchScreen> {
             ) {
               final item = _languages[index];
               return InkWell(
-                onTap: () => _selectLanguage(item.title),
+                onTap: () {
+                  M3EHaptics.trigger(M3EHapticFeedback.light);
+                  _selectLanguage(item.title);
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   padding: const EdgeInsets.all(14),

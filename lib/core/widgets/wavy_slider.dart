@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
 /// Signature Google Pixel expressive wavy soundwave progress slider.
 class WavySlider extends StatefulWidget {
@@ -96,6 +97,7 @@ class _WavySliderState extends State<WavySlider>
               behavior: HitTestBehavior.opaque,
               onHorizontalDragStart: (details) {
                 if (width <= 0) return;
+                M3EHaptics.trigger(M3EHapticFeedback.light);
                 final val = (details.localPosition.dx / width).clamp(0.0, 1.0);
                 setState(() {
                   _dragValue = val;
@@ -121,6 +123,7 @@ class _WavySliderState extends State<WavySlider>
               },
               onTapDown: (details) {
                 if (width <= 0) return;
+                M3EHaptics.trigger(M3EHapticFeedback.light);
                 final val = (details.localPosition.dx / width).clamp(0.0, 1.0);
                 if (totalMs > 0) {
                   final target =

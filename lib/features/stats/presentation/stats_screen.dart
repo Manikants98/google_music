@@ -359,6 +359,7 @@ class StatsScreen extends StatelessWidget {
               outerRadius: 12,
               innerRadius: 4,
               gap: 2,
+              haptic: M3EHapticFeedback.light,
               itemCount: topSongs.length,
               onTap: (int index) {
                 M3ESongTile.handleTap(context, topSongs[index], queue: topSongs);
@@ -467,6 +468,7 @@ class StatsScreen extends StatelessWidget {
               outerRadius: 12,
               innerRadius: 4,
               gap: 2,
+              haptic: M3EHapticFeedback.light,
               itemCount: topArtists.length,
               itemBuilder: (BuildContext context, int index) {
                 final artist = topArtists[index];

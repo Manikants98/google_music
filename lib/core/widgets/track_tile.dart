@@ -57,6 +57,7 @@ class M3ESongTile extends StatelessWidget {
     SongModel song, {
     List<SongModel>? queue,
   }) {
+    M3EHaptics.trigger(M3EHapticFeedback.light);
     final controller = context.read<MusicPlayerController>();
     if (controller.currentSong?.id == song.id) {
       if (controller.isPlaying) {
@@ -193,7 +194,10 @@ class M3ESongTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: onTap ?? () => handleTap(context, song, queue: queue),
-          onLongPress: () => TrackOptionsSheet.show(context, song),
+          onLongPress: () {
+            M3EHaptics.trigger(M3EHapticFeedback.light);
+            TrackOptionsSheet.show(context, song);
+          },
           borderRadius: BorderRadius.circular(10),
           child: content,
         ),
@@ -203,7 +207,10 @@ class M3ESongTile extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        onLongPress: () => TrackOptionsSheet.show(context, song),
+        onLongPress: () {
+          M3EHaptics.trigger(M3EHapticFeedback.light);
+          TrackOptionsSheet.show(context, song);
+        },
         borderRadius: BorderRadius.circular(4),
         child: content,
       );
@@ -212,7 +219,10 @@ class M3ESongTile extends StatelessWidget {
     if (interactive) {
       return InkWell(
         onTap: () => handleTap(context, song, queue: queue),
-        onLongPress: () => TrackOptionsSheet.show(context, song),
+        onLongPress: () {
+          M3EHaptics.trigger(M3EHapticFeedback.light);
+          TrackOptionsSheet.show(context, song);
+        },
         borderRadius: BorderRadius.circular(4),
         child: content,
       );

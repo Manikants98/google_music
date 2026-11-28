@@ -324,6 +324,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: M3EButton(
+                        decoration: const M3EButtonDecoration(
+                          haptic: M3EHapticFeedback.light,
+                        ),
                         label: Text(
                           isAlreadyImported
                               ? 'Saved to My Playlists'
@@ -360,6 +363,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                           size: M3EButtonSize.sm,
                           style: M3EButtonStyle.tonal,
                           neighborSquish: false,
+                          haptic: M3EHapticFeedback.light,
                           onSelectedIndexChanged: (int? index) {
                             if (index == 0) {
                               controller.playPlaylist(playlist, shuffle: false);
@@ -410,6 +414,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                               ),
                               label: const Text('Play All'),
                               decoration: M3EButtonDecoration(
+                                haptic: M3EHapticFeedback.light,
                                 foregroundColor: WidgetStateProperty.all(
                                   accent.computeLuminance() > 0.5
                                       ? Colors.black
@@ -417,9 +422,12 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                                 ),
                               ),
                             ),
-                            M3EButtonGroupAction(
-                              icon: const Icon(Icons.shuffle_rounded, size: 18),
-                              label: const Text('Shuffle'),
+                            const M3EButtonGroupAction(
+                              icon: Icon(Icons.shuffle_rounded, size: 18),
+                              label: Text('Shuffle'),
+                              decoration: M3EButtonDecoration(
+                                haptic: M3EHapticFeedback.light,
+                              ),
                             ),
                             M3EButtonGroupAction(
                               icon: isDownloading
@@ -451,6 +459,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                                 ),
                               ),
                               decoration: M3EButtonDecoration(
+                                haptic: M3EHapticFeedback.light,
                                 backgroundColor: WidgetStateProperty.all(
                                   isFullyDownloaded
                                       ? accent.withValues(alpha: 0.16)
@@ -519,6 +528,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   outerRadius: 12,
                   innerRadius: 4,
                   gap: 2,
+                  haptic: M3EHapticFeedback.light,
                   itemCount: songs.length,
                   onTap: (int index) {
                     controller.playPlaylist(playlist, startIndex: index);

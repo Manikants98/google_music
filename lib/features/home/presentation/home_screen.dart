@@ -80,8 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final isBeta =
-            context.read<MusicPlayerController>().isBetaChannelEnabled;
+        final isBeta = context
+            .read<MusicPlayerController>()
+            .isBetaChannelEnabled;
         AppUpdateService.checkAndPrompt(
           context,
           manual: false,
@@ -435,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         isDesktop ? 24 : 12,
-        24,
+        10,
         isDesktop ? 24 : 12,
         10,
       ),
@@ -520,6 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   outerRadius: 12,
                   innerRadius: 4,
                   gap: 2,
+                  haptic: M3EHapticFeedback.light,
                   itemCount: leftTracks.length,
                   onTap: (int index) {
                     M3ESongTile.handleTap(
@@ -540,6 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   outerRadius: 12,
                   innerRadius: 4,
                   gap: 2,
+                  haptic: M3EHapticFeedback.light,
                   itemCount: rightTracks.length,
                   onTap: (int index) {
                     M3ESongTile.handleTap(
@@ -567,6 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
           outerRadius: 12,
           innerRadius: 4,
           gap: 2,
+          haptic: M3EHapticFeedback.light,
           itemCount: tracks.length,
           onTap: (int index) {
             M3ESongTile.handleTap(context, tracks[index], queue: tracks);
@@ -653,7 +657,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.search_rounded),
                 tooltip: 'Search Songs',
                 color: colorScheme.onSurface,
-                onPressed: widget.onSearchTapped,
+                onPressed: () {
+                  M3EHaptics.trigger(M3EHapticFeedback.light);
+                  widget.onSearchTapped();
+                },
               ),
               SizedBox(width: isDesktop ? 18 : 6),
             ],
@@ -663,9 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 38,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 24 : 12,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 12),
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -675,7 +680,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           : 'Shuffle Feed',
                       type: M3EChipType.filter,
                       selected: _isSmartShuffleActive,
-                      onPressed: _shuffleHomeScreenTracks,
+                      onPressed: () {
+                        M3EHaptics.trigger(M3EHapticFeedback.light);
+                        _shuffleHomeScreenTracks();
+                      },
                     ),
                   ),
                   ..._languages.map((lang) {
@@ -687,7 +695,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: lang,
                         type: M3EChipType.filter,
                         selected: isSelected,
-                        onPressed: () => _onLanguageSelected(lang),
+                        onPressed: () {
+                          M3EHaptics.trigger(M3EHapticFeedback.light);
+                          _onLanguageSelected(lang);
+                        },
                       ),
                     );
                   }),
@@ -729,6 +740,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 20),
                       M3EButton(
+                        decoration: const M3EButtonDecoration(
+                          haptic: M3EHapticFeedback.light,
+                        ),
                         label: const Text('Reload'),
                         style: M3EButtonStyle.tonal,
                         onPressed: () => _onRefresh(),
@@ -766,6 +780,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? 'Listen again'
                       : 'Speed dials',
                   extraAction: M3EButton(
+                    decoration: const M3EButtonDecoration(
+                      haptic: M3EHapticFeedback.light,
+                    ),
                     label: const Text('Play all'),
                     style: M3EButtonStyle.tonal,
                     size: M3EButtonSize.sm,
@@ -836,6 +853,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final song = displayTracks[index];
                         return GestureDetector(
                           onTap: () {
+                            M3EHaptics.trigger(M3EHapticFeedback.light);
                             controller.playSong(song, newQueue: _tracks);
                           },
                           child: SizedBox(

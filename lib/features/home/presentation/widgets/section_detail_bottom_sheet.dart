@@ -125,6 +125,9 @@ class _SectionDetailBottomSheetState extends State<SectionDetailBottomSheet> {
                   ),
                   if (_tracks.isNotEmpty) ...<Widget>[
                     M3EButton(
+                      decoration: const M3EButtonDecoration(
+                        haptic: M3EHapticFeedback.light,
+                      ),
                       label: const Text('Play all'),
                       style: M3EButtonStyle.tonal,
                       size: M3EButtonSize.sm,
@@ -149,6 +152,7 @@ class _SectionDetailBottomSheetState extends State<SectionDetailBottomSheet> {
                           ? 'All tracks downloaded'
                           : 'Download all tracks',
                       onPressed: () {
+                        M3EHaptics.trigger(M3EHapticFeedback.light);
                         if (controller.isPlaylistFullyDownloaded(_tracks)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -203,6 +207,7 @@ class _SectionDetailBottomSheetState extends State<SectionDetailBottomSheet> {
                           outerRadius: 12,
                           innerRadius: 4,
                           gap: 2,
+                          haptic: M3EHapticFeedback.light,
                           itemCount: _tracks.length,
                           onTap: (int index) {
                             M3ESongTile.handleTap(

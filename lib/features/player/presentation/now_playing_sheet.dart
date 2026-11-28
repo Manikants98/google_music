@@ -487,7 +487,10 @@ class NowPlayingSheet extends StatelessWidget {
         final isExternal = route.type != AudioRouteType.speaker;
 
         return InkWell(
-          onTap: () => AudioOutputSheet.show(context),
+          onTap: () {
+            M3EHaptics.trigger(M3EHapticFeedback.light);
+            AudioOutputSheet.show(context);
+          },
           borderRadius: BorderRadius.circular(20),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -560,7 +563,10 @@ class NowPlayingSheet extends StatelessWidget {
           onPressed: controller.playPrevious,
         ),
         GestureDetector(
-          onTap: controller.togglePlayPause,
+          onTap: () {
+            M3EHaptics.trigger(M3EHapticFeedback.light);
+            controller.togglePlayPause();
+          },
           child: Container(
             width: 70,
             height: 70,
@@ -643,6 +649,7 @@ class NowPlayingSheet extends StatelessWidget {
       size: M3EButtonSize.sm,
       style: M3EButtonStyle.tonal,
       neighborSquish: false,
+      haptic: M3EHapticFeedback.light,
       onSelectedIndexChanged: (int? index) {
         if (index == 0) {
           QueueBottomSheet.showUpNext(context);
@@ -654,6 +661,7 @@ class NowPlayingSheet extends StatelessWidget {
       },
       actions: const <M3EButtonGroupAction>[
         M3EButtonGroupAction(
+          decoration: M3EButtonDecoration(haptic: M3EHapticFeedback.light),
           label: Text(
             'UP NEXT',
             style: TextStyle(
@@ -664,6 +672,7 @@ class NowPlayingSheet extends StatelessWidget {
           ),
         ),
         M3EButtonGroupAction(
+          decoration: M3EButtonDecoration(haptic: M3EHapticFeedback.light),
           label: Text(
             'LYRICS',
             style: TextStyle(
@@ -674,6 +683,7 @@ class NowPlayingSheet extends StatelessWidget {
           ),
         ),
         M3EButtonGroupAction(
+          decoration: M3EButtonDecoration(haptic: M3EHapticFeedback.light),
           label: Text(
             'RELATED',
             style: TextStyle(

@@ -62,11 +62,13 @@ class M3EHeroBannerCarousel extends StatelessWidget {
           consumeMaxWeight: false,
           shrinkExtent: 0.0,
           scaleItems: true,
+          haptic: M3EHapticFeedback.light,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 4),
           onTap: (int index) {
+            M3EHaptics.trigger(M3EHapticFeedback.light);
             final song = displaySongs[index % displaySongs.length];
             onPlay(song, displaySongs);
           },
@@ -75,7 +77,7 @@ class M3EHeroBannerCarousel extends StatelessWidget {
             final isCurrentPlaying = isCurrentActiveTrack && isPlaying;
 
             return ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(12),
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[

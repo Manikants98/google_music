@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/music_player_controller.dart';
@@ -192,7 +193,10 @@ class TrackOptionsSheet extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        M3EHaptics.trigger(M3EHapticFeedback.light);
+        onTap();
+      },
       borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),

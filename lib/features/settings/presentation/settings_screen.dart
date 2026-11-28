@@ -1,5 +1,4 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
 
@@ -123,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (_developerTapCount >= 5) {
       _developerTapCount = 0;
-      HapticFeedback.heavyImpact();
+      M3EHaptics.trigger(M3EHapticFeedback.light);
       controller.setDeveloperMode(true);
       controller.setBetaChannel(true);
       _showDynamicSnackBar(
@@ -133,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         duration: const Duration(seconds: 3),
       );
     } else if (_developerTapCount >= 2) {
-      HapticFeedback.lightImpact();
+      M3EHaptics.trigger(M3EHapticFeedback.light);
       final remaining = 5 - _developerTapCount;
       _showDynamicSnackBar(
         context,
@@ -247,8 +246,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: Switch(
                   value: controller.isLiquidMeshEnabled,
                   activeThumbColor: accent,
-                  onChanged: (bool value) =>
-                      controller.setLiquidMeshEnabled(value),
+                  onChanged: (bool value) {
+                    M3EHaptics.trigger(M3EHapticFeedback.light);
+                    controller.setLiquidMeshEnabled(value);
+                  },
                 ),
               ),
             ],
@@ -296,8 +297,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: Switch(
                   value: controller.isAutoplayEnabled,
                   activeThumbColor: accent,
-                  onChanged: (bool value) =>
-                      controller.setAutoplayEnabled(value),
+                  onChanged: (bool value) {
+                    M3EHaptics.trigger(M3EHapticFeedback.light);
+                    controller.setAutoplayEnabled(value);
+                  },
                 ),
               ),
               _SettingsItem(
@@ -526,7 +529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: controller.isBetaChannelEnabled,
                     activeThumbColor: accent,
                     onChanged: (val) {
-                      HapticFeedback.mediumImpact();
+                      M3EHaptics.trigger(M3EHapticFeedback.light);
                       if (!val) {
                         controller.setBetaChannel(false);
                         controller.setDeveloperMode(false);
@@ -637,11 +640,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               outerRadius: 12,
               innerRadius: 4,
               gap: 2,
+              haptic: M3EHapticFeedback.light,
               itemCount: items.length,
               itemBuilder: (BuildContext context, int index) {
                 final item = items[index];
                 return InkWell(
-                  onTap: item.onTap,
+                  onTap: item.onTap != null
+                      ? () {
+                          M3EHaptics.trigger(M3EHapticFeedback.light);
+                          item.onTap!();
+                        }
+                      : null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,

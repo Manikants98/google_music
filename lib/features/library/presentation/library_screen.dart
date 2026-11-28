@@ -161,6 +161,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   label: 'ACTIVITY',
                   title: 'Recently played',
                   extraAction: M3EButton(
+                    decoration: const M3EButtonDecoration(
+                      haptic: M3EHapticFeedback.light,
+                    ),
                     label: const Text('See all'),
                     style: M3EButtonStyle.tonal,
                     size: M3EButtonSize.sm,
@@ -230,6 +233,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 label: 'COLLECTIONS',
                 title: 'Your playlists',
                 extraAction: M3EButton(
+                  decoration: const M3EButtonDecoration(
+                    haptic: M3EHapticFeedback.light,
+                  ),
                   label: const Text('New'),
                   style: M3EButtonStyle.tonal,
                   size: M3EButtonSize.sm,
@@ -275,6 +281,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 label: 'CUSTOM MIXES',
                 title: 'All playlists (${playlists.length})',
                 extraAction: M3EButton(
+                  decoration: const M3EButtonDecoration(
+                    haptic: M3EHapticFeedback.light,
+                  ),
                   label: const Text('Create'),
                   style: M3EButtonStyle.tonal,
                   size: M3EButtonSize.sm,
@@ -322,6 +331,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         ),
                         const SizedBox(height: 14),
                         M3EButton(
+                          decoration: const M3EButtonDecoration(
+                            haptic: M3EHapticFeedback.light,
+                          ),
                           label: const Text('Create Playlist'),
                           style: M3EButtonStyle.tonal,
                           onPressed: () => _showCreatePlaylistDialog(context, controller),
@@ -344,6 +356,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 title: 'Liked songs (${liked.length})',
                 extraAction: liked.isNotEmpty
                     ? M3EButton(
+                        decoration: const M3EButtonDecoration(
+                          haptic: M3EHapticFeedback.light,
+                        ),
                         label: const Text('Play all'),
                         style: M3EButtonStyle.tonal,
                         size: M3EButtonSize.sm,
@@ -361,6 +376,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     outerRadius: 12,
                     innerRadius: 4,
                     gap: 2,
+                    haptic: M3EHapticFeedback.light,
                     itemCount: liked.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(context, liked[index], queue: liked);
@@ -434,6 +450,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     outerRadius: 12,
                     innerRadius: 4,
                     gap: 2,
+                    haptic: M3EHapticFeedback.light,
                     itemCount: downloaded.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(context, downloaded[index], queue: downloaded);
@@ -494,6 +511,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 title: 'Playback history (${history.length})',
                 extraAction: history.isNotEmpty
                     ? M3EButton(
+                        decoration: const M3EButtonDecoration(
+                          haptic: M3EHapticFeedback.light,
+                        ),
                         label: const Text('Clear'),
                         style: M3EButtonStyle.tonal,
                         size: M3EButtonSize.sm,
@@ -511,6 +531,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     outerRadius: 12,
                     innerRadius: 4,
                     gap: 2,
+                    haptic: M3EHapticFeedback.light,
                     itemCount: history.length,
                     onTap: (int index) {
                       M3ESongTile.handleTap(context, history[index], queue: history);
@@ -1119,6 +1140,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 Row(
                   children: <Widget>[
                     M3EButton(
+                      decoration: const M3EButtonDecoration(
+                        haptic: M3EHapticFeedback.light,
+                      ),
                       label: const Text('Play all'),
                       style: M3EButtonStyle.tonal,
                       size: M3EButtonSize.sm,
@@ -1171,6 +1195,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       outerRadius: 12,
       innerRadius: 4,
       gap: 2,
+      haptic: M3EHapticFeedback.light,
       itemCount: playlists.length,
       onTap: (int index) {
         Navigator.of(context).push(
@@ -1321,6 +1346,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
           ),
           M3EButton(
+            decoration: const M3EButtonDecoration(
+              haptic: M3EHapticFeedback.light,
+            ),
             label: const Text('Create'),
             style: M3EButtonStyle.tonal,
             size: M3EButtonSize.sm,
