@@ -2,18 +2,32 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:just_audio_platform_interface/method_channel_just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Platform implementation that tracks active just_audio player IDs on disk
-/// so any orphaned players running on native iOS/Android can be reliably paused
-/// and disposed upon Flutter hot restarts or session initialization.
+/// and reliably disposes all orphaned native iOS/Android audio players upon
+/// Flutter hot restarts or app re-initialization.
 class TrackedJustAudioPlatform extends MethodChannelJustAudio {
   static final Set<String> _activePlayerIds = <String>{};
   static File? _cacheFile;
   static bool _installed = false;
+
+  /// Helper to get or lazily initialize the cache file reference.
+  static Future<File?> _getCacheFile() async {
+    if (_cacheFile != null) return _cacheFile;
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      _cacheFile = File('${docDir.path}/active_player_ids.json');
+      return _cacheFile;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Installs tracking platform and immediately stops any previous players from dead isolates.
   static Future<void> install() async {
@@ -22,11 +36,32 @@ class TrackedJustAudioPlatform extends MethodChannelJustAudio {
       _installed = true;
     }
 
+    // 1. Instantly kill all native players on iOS & Android via just_audio's main channel
     try {
-      final docDir = await getApplicationDocumentsDirectory();
-      _cacheFile = File('${docDir.path}/active_player_ids.json');
-      if (await _cacheFile!.exists()) {
-        final content = await _cacheFile!.readAsString();
+      const mainChannel = MethodChannel('com.ryanheise.just_audio.methods');
+      await mainChannel.invokeMethod<dynamic>('disposeAllPlayers');
+    } catch (e) {
+      debugPrint('[TrackedJustAudioPlatform] disposeAllPlayers error: $e');
+    }
+
+    // 2. Immediately deactivate the audio session so any remaining buffers fall silent
+    try {
+      final session = await AudioSession.instance;
+      await session.setActive(false);
+    } catch (_) {}
+
+    // 3. Command native AppDelegate / MainActivity to halt all audio
+    try {
+      const nativeChannel =
+          MethodChannel('com.mkx.google_music/download_notification');
+      await nativeChannel.invokeMethod<dynamic>('stopAllAudio');
+    } catch (_) {}
+
+    // 4. Load persisted IDs from disk to explicitly pause each one individually
+    try {
+      final file = await _getCacheFile();
+      if (file != null && await file.exists()) {
+        final content = await file.readAsString();
         if (content.trim().isNotEmpty) {
           final dynamic decoded = jsonDecode(content);
           if (decoded is List) {
@@ -43,35 +78,51 @@ class TrackedJustAudioPlatform extends MethodChannelJustAudio {
     await stopAllPreviousPlayers();
   }
 
-  /// Commands all previously registered native players on iOS/Android to pause and stop.
+  /// Commands all previously registered native players on iOS/Android to mute, pause, and dispose.
   static Future<void> stopAllPreviousPlayers() async {
+    // 1. Direct channel disposal
     try {
-      const nativeChannel =
-          MethodChannel('com.mkx.google_music/download_notification');
-      await nativeChannel.invokeMethod<void>('stopAllAudio');
+      const mainChannel = MethodChannel('com.ryanheise.just_audio.methods');
+      await mainChannel.invokeMethod<dynamic>('disposeAllPlayers');
     } catch (_) {}
 
+    // 2. Individual player mute & pause
     final idsToStop = Set<String>.from(_activePlayerIds);
     for (final id in idsToStop) {
       try {
         final channel = MethodChannel('com.ryanheise.just_audio.methods.$id');
-        await channel.invokeMethod<void>('pause');
-        await channel.invokeMethod<void>('stop');
+        await channel.invokeMethod<dynamic>(
+          'setVolume',
+          <String, dynamic>{'volume': 0.0},
+        );
+        await channel.invokeMethod<dynamic>('pause');
       } catch (_) {}
       try {
         const mainChannel = MethodChannel('com.ryanheise.just_audio.methods');
-        await mainChannel.invokeMethod<void>('disposePlayer', <String, Object>{'id': id});
+        await mainChannel.invokeMethod<dynamic>(
+          'disposePlayer',
+          <String, dynamic>{'id': id},
+        );
       } catch (_) {}
     }
     _activePlayerIds.clear();
     await _save();
+
+    // 3. Deactivate session
+    try {
+      final session = await AudioSession.instance;
+      await session.setActive(false);
+    } catch (_) {}
   }
 
   static Future<void> _save() async {
     try {
-      final file = _cacheFile;
+      final file = await _getCacheFile();
       if (file != null) {
-        await file.writeAsString(jsonEncode(_activePlayerIds.toList()), flush: true);
+        await file.writeAsString(
+          jsonEncode(_activePlayerIds.toList()),
+          flush: true,
+        );
       }
     } catch (_) {}
   }
@@ -79,14 +130,16 @@ class TrackedJustAudioPlatform extends MethodChannelJustAudio {
   @override
   Future<AudioPlayerPlatform> init(InitRequest request) async {
     _activePlayerIds.add(request.id);
-    unawaited(_save());
+    await _save();
     return super.init(request);
   }
 
   @override
-  Future<DisposePlayerResponse> disposePlayer(DisposePlayerRequest request) async {
+  Future<DisposePlayerResponse> disposePlayer(
+    DisposePlayerRequest request,
+  ) async {
     _activePlayerIds.remove(request.id);
-    unawaited(_save());
+    await _save();
     return super.disposePlayer(request);
   }
 }
