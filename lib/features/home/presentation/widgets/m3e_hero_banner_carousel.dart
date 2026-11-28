@@ -4,16 +4,15 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../models/song_model.dart';
 
-/// ArchiveTune style Material 3 Expressive Hero Carousel.
+/// Material 3 Expressive Widescreen Hero Carousel with Infinite Scroll.
 ///
-/// Built directly with [M3ECarousel] from `material_3_expressive` using:
-/// - [M3ECarouselType.hero]
-/// - [M3ECarouselHeroAlignment.center]
-/// - [M3ECarouselScrim.gradient]
-/// - Large squircle curvature (28dp) with prominent hero card and peeking neighbors
-/// - Floating circular Play button on the hero item
-/// - Smooth auto-advance timer
-class M3EHeroBannerCarousel extends StatefulWidget {
+/// Features:
+/// - Widescreen hero proportion (center card flex: 7, side peeks flex: 1)
+/// - True infinite loop scrolling in both directions
+/// - Smooth snap physics on swipe
+/// - M3 squircle curvature (24dp radius)
+/// - Floating circular Play button with equalizer indicator
+class M3EHeroBannerCarousel extends StatelessWidget {
   /// List of featured songs to display in the carousel.
   final List<SongModel> songs;
 
@@ -40,203 +39,234 @@ class M3EHeroBannerCarousel extends StatefulWidget {
   });
 
   @override
-  State<M3EHeroBannerCarousel> createState() => _M3EHeroBannerCarouselState();
-}
-
-class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
-  late final M3ECarouselController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = M3ECarouselController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.songs.isEmpty) return const SizedBox.shrink();
+    if (songs.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDesktop = MediaQuery.sizeOf(context).width > 850;
     final accent = colorScheme.primary;
 
-    final displaySongs = widget.songs.take(10).toList();
-    final double carouselHeight = isDesktop ? 350 : 315;
+    // Take top 10 blockbuster hits for the carousel
+    final displaySongs = songs.take(10).toList();
+    final double carouselHeight = isDesktop ? 240 : 205;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
       child: SizedBox(
         height: carouselHeight,
-        child: M3ECarousel(
-          controller: _controller,
-          type: M3ECarouselType.hero,
-          axis: Axis.horizontal,
-          heroAlignment: M3ECarouselHeroAlignment.center,
-          freeScroll: false,
-          showAll: false,
+        child: M3ECarouselView.weighted(
+          flexWeights: isDesktop ? const <int>[1, 8, 1] : const <int>[1, 7, 1],
+          infinite: true,
+          itemSnapping: true,
+          consumeMaxWeight: false,
+          shrinkExtent: 0.0,
+          scaleItems: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          onTap: (int index) {
+            final song = displaySongs[index % displaySongs.length];
+            onPlay(song, displaySongs);
+          },
           children: displaySongs.map((song) {
-                final isCurrentActiveTrack =
-                    widget.currentPlayingSong?.id == song.id;
-                final isCurrentPlaying =
-                    isCurrentActiveTrack && widget.isPlaying;
+            final isCurrentActiveTrack = currentPlayingSong?.id == song.id;
+            final isCurrentPlaying = isCurrentActiveTrack && isPlaying;
 
-                return M3ECarouselItem(
-                  image: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      CachedNetworkImage(
-                        imageUrl: song.thumbnailUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (BuildContext context, String url) =>
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  // 1. High-resolution album artwork backdrop
+                  CachedNetworkImage(
+                    imageUrl: song.thumbnailUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (BuildContext context, String url) =>
+                        Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                    errorWidget:
+                        (BuildContext context, String url, Object error) =>
                             Container(
                               color: colorScheme.surfaceContainerHighest,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                  ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.music_note_rounded,
+                                  size: 48,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
-                        errorWidget:
-                            (BuildContext context, String url, Object error) =>
-                                Container(
-                                  color: colorScheme.surfaceContainerHighest,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.music_note_rounded,
-                                      size: 48,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
+                  ),
+
+                  // 2. Cinematic Gradient Scrim
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const <double>[0.0, 0.35, 0.68, 1.0],
+                        colors: <Color>[
+                          Colors.black.withValues(alpha: 0.40),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.65),
+                          Colors.black.withValues(alpha: 0.94),
+                        ],
                       ),
-                      // Floating circular Play Button (ArchiveTune style)
-                      Positioned(
-                        right: 14,
-                        bottom: 14,
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: isCurrentPlaying
-                                ? colorScheme.primary
-                                : colorScheme.primaryContainer,
-                            shape: BoxShape.circle,
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                    ),
+                  ),
+
+                  // 3. Subtle Outline Border
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(
+                          alpha: theme.brightness == Brightness.dark
+                              ? 0.12
+                              : 0.20,
+                        ),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+
+                  // 4. Playing Badge (Top-Right)
+                  if (isCurrentActiveTrack)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.90),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              Icons.equalizer_rounded,
+                              size: 13,
+                              color: Colors.black,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'PLAYING',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 9.5,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // 5. Song Details (Bottom-Left)
+                  Positioned(
+                    left: 14,
+                    bottom: 12,
+                    right: 64,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            letterSpacing: -0.2,
+                            shadows: <Shadow>[
+                              Shadow(
+                                color: Colors.black87,
+                                blurRadius: 8,
+                                offset: Offset(0, 1),
                               ),
                             ],
                           ),
-                          child: Icon(
-                            isCurrentPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            size: 28,
-                            color: isCurrentPlaying
-                                ? colorScheme.onPrimary
-                                : colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          song.duration.isNotEmpty && song.duration != '--:--'
+                              ? '${song.artist} • ${song.duration}'
+                              : song.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            shadows: const <Shadow>[
+                              Shadow(
+                                color: Colors.black87,
+                                blurRadius: 6,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      if (isCurrentActiveTrack)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: accent.withValues(alpha: 0.90),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                const Icon(
-                                  Icons.equalizer_rounded,
-                                  size: 13,
-                                  color: Colors.black,
-                                ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'PLAYING',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 9.5,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                  title: Padding(
-                    padding: const EdgeInsets.only(right: 56),
-                    child: Text(
-                      song.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        letterSpacing: -0.2,
-                        shadows: <Shadow>[
-                          Shadow(
-                            color: Colors.black87,
-                            blurRadius: 8,
-                            offset: Offset(0, 1),
+
+                  // 6. Floating Circular Play Button (Bottom-Right)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isCurrentPlaying
+                            ? colorScheme.primary
+                            : colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.40),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(right: 56),
-                    child: Text(
-                      song.duration.isNotEmpty && song.duration != '--:--'
-                          ? '${song.artist} • ${song.duration}'
-                          : song.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        shadows: const <Shadow>[
-                          Shadow(
-                            color: Colors.black87,
-                            blurRadius: 6,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                      child: Icon(
+                        isCurrentPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        size: 26,
+                        color: isCurrentPlaying
+                            ? colorScheme.onPrimary
+                            : colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
-                  showScrim: const M3ECarouselScrim.gradient(),
-                  onTap: () => widget.onPlay(song, displaySongs),
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      }
-    }
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}

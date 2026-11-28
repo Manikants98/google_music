@@ -420,16 +420,28 @@ class HomeScreenSkeleton extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
           child: SizedBox(
-            height: 315,
+            height: 205,
             child: Row(
               children: <Widget>[
                 Expanded(
-                  flex: 5,
+                  flex: 1,
                   child: M3EShimmer(
                     child: M3ESkeletonBox(
                       width: double.infinity,
-                      height: 315,
-                      radius: 28,
+                      height: 205,
+                      radius: 24,
+                      color: colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 7,
+                  child: M3EShimmer(
+                    child: M3ESkeletonBox(
+                      width: double.infinity,
+                      height: 205,
+                      radius: 24,
                       color: colorScheme.surfaceContainerHighest,
                     ),
                   ),
@@ -440,20 +452,8 @@ class HomeScreenSkeleton extends StatelessWidget {
                   child: M3EShimmer(
                     child: M3ESkeletonBox(
                       width: double.infinity,
-                      height: 315,
-                      radius: 28,
-                      color: colorScheme.surfaceContainerHighest,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 24,
-                  child: M3EShimmer(
-                    child: M3ESkeletonBox(
-                      width: 24,
-                      height: 315,
-                      radius: 28,
+                      height: 205,
+                      radius: 24,
                       color: colorScheme.surfaceContainerHighest,
                     ),
                   ),
