@@ -7,6 +7,7 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/offline/download_notification_service.dart';
 import '../../../core/update/app_update_service.dart';
 import '../../player/presentation/sleep_timer_sheet.dart';
+import '../../stats/presentation/stats_screen.dart';
 
 /// Item descriptor for a settings action row.
 class _SettingsItem {
@@ -244,6 +245,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
+              ),
+            ],
+          ),
+          _buildSettingsGroup(
+            context: context,
+            title: 'Insights & Analytics',
+            icon: Icons.insights_rounded,
+            controller: controller,
+            colorScheme: colorScheme,
+            theme: theme,
+            items: <_SettingsItem>[
+              _SettingsItem(
+                icon: Icons.auto_graph_rounded,
+                title: 'Listening Stats',
+                subtitle: 'View your total listening time, top artists & music recap',
+                trailing: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const StatsScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),

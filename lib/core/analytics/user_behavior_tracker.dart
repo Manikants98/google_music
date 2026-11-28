@@ -383,6 +383,85 @@ class UserBehaviorTracker {
     };
   }
 
+  /// Total number of plays recorded across all songs.
+  int get totalPlays {
+    final count = _songPlayCounts.values.fold<int>(0, (sum, val) => sum + val);
+    return count > 0 ? count : _playedSongModels.length;
+  }
+
+  /// Total count of unique songs played.
+  int get uniqueSongsCount => _playedSongModels.length;
+
+  /// Total count of unique artists listened to.
+  int get uniqueArtistsCount {
+    final artists = <String>{};
+    for (final song in _playedSongModels.values) {
+      final name = song.artist.trim();
+      if (name.isNotEmpty) artists.add(name);
+    }
+    return artists.length;
+  }
+
+  /// Detailed favorite artist statistics: (name, topSongThumbnail, playCount, totalDwellSeconds).
+  ({String name, String? thumbnailUrl, int playCount, int dwellSeconds})? getFavoriteArtistDetails() {
+    if (_playedSongModels.isEmpty && _artistAffinities.isEmpty) return null;
+
+    final Map<String, int> artistPlays = <String, int>{};
+    final Map<String, int> artistDwell = <String, int>{};
+    final Map<String, String> artistThumbs = <String, String>{};
+
+    for (final song in _playedSongModels.values) {
+      final artist = song.artist.trim();
+      if (artist.isEmpty) continue;
+      final plays = _songPlayCounts[song.id] ?? 1;
+      final dwell = _songDwellTime[song.id] ?? 0;
+
+      artistPlays[artist] = (artistPlays[artist] ?? 0) + plays;
+      artistDwell[artist] = (artistDwell[artist] ?? 0) + dwell;
+      if (song.thumbnailUrl.isNotEmpty && !artistThumbs.containsKey(artist)) {
+        artistThumbs[artist] = song.thumbnailUrl;
+      }
+    }
+
+    if (artistPlays.isEmpty) return null;
+
+    final sorted = artistPlays.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final top = sorted.first;
+    return (
+      name: top.key,
+      thumbnailUrl: artistThumbs[top.key],
+      playCount: top.value,
+      dwellSeconds: artistDwell[top.key] ?? 0,
+    );
+  }
+
+  /// Returns the top ranked artists with their play counts and thumbnails.
+  List<({String name, String? thumbnailUrl, int playCount})> getTopArtists({int limit = 5}) {
+    final Map<String, int> artistPlays = <String, int>{};
+    final Map<String, String> artistThumbs = <String, String>{};
+
+    for (final song in _playedSongModels.values) {
+      final artist = song.artist.trim();
+      if (artist.isEmpty) continue;
+      final plays = _songPlayCounts[song.id] ?? 1;
+      artistPlays[artist] = (artistPlays[artist] ?? 0) + plays;
+      if (song.thumbnailUrl.isNotEmpty && !artistThumbs.containsKey(artist)) {
+        artistThumbs[artist] = song.thumbnailUrl;
+      }
+    }
+
+    final sorted = artistPlays.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return sorted.take(limit).map((e) => (
+      name: e.key,
+      thumbnailUrl: artistThumbs[e.key],
+      playCount: e.value,
+    )).toList();
+  }
+
   /// Increases affinity score for an artist.
   void _boostAffinity(String artist, double amount) {
     final rawArtists = artist.split(

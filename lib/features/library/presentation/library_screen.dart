@@ -6,6 +6,7 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../models/song_model.dart';
 import '../../playlist/presentation/playlist_detail_screen.dart';
+import '../../stats/presentation/stats_screen.dart';
 
 /// User personal music library containing playlists, liked songs, downloads, and history.
 class LibraryScreen extends StatefulWidget {
@@ -59,6 +60,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.insights_rounded),
+            tooltip: 'Listening Stats',
+            color: colorScheme.onSurface,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const StatsScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: 'Search Songs',
@@ -894,19 +907,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
               const SizedBox(width: 8),
 
-              // Top Tracks Card
+              // Stats & Insights Card
               Expanded(
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      if (speedDials.isNotEmpty) {
-                        controller.playSong(speedDials.first, newQueue: speedDials);
-                      } else if (controller.history.isNotEmpty) {
-                        controller.playSong(controller.history.first, newQueue: controller.history);
-                      } else if (controller.likedSongs.isNotEmpty) {
-                        controller.playSong(controller.likedSongs.first, newQueue: controller.likedSongs);
-                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => const StatsScreen(),
+                        ),
+                      );
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
@@ -925,7 +936,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
-                              Icons.trending_up_rounded,
+                              Icons.insights_rounded,
                               color: accent,
                               size: 18,
                             ),
@@ -937,7 +948,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
                                 Text(
-                                  'Top Tracks',
+                                  'Stats',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -946,7 +957,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Speed Dials',
+                                  'Insights',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: colorScheme.onSurfaceVariant,
