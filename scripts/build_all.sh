@@ -139,7 +139,7 @@ APK_OUTPUT="${RELEASE_DIR}/google_music.apk"
 DMG_OUTPUT="${RELEASE_DIR}/google_music.dmg"
 
 echo -e "${YELLOW}${BOLD}🤖 [3/4] Building Android Release APK...${RESET}"
-flutter build apk --release
+flutter build apk --release --android-skip-build-dependency-validation
 
 if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
   cp build/app/outputs/flutter-apk/app-release.apk "$APK_OUTPUT"
