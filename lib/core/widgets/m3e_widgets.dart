@@ -418,33 +418,72 @@ class HomeScreenSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               M3EShimmer(
-                child: M3ESkeletonBox(
-                  width: double.infinity,
-                  height: 185,
-                  radius: 12,
-                  color: colorScheme.surfaceContainerHighest,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    M3ESkeletonBox(
+                      width: 80,
+                      height: 10,
+                      radius: 3,
+                      color: colorScheme.surfaceContainerHigh,
+                    ),
+                    const SizedBox(height: 5),
+                    M3ESkeletonBox(
+                      width: 130,
+                      height: 20,
+                      radius: 4,
+                      color: colorScheme.surfaceContainerHighest,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              M3EShimmer(
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 315,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List<Widget>.generate(5, (index) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: index == 0 ? 18 : 6,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
-                        color: colorScheme.surfaceContainerHighest,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 5,
+                      child: M3EShimmer(
+                        child: M3ESkeletonBox(
+                          width: double.infinity,
+                          height: 315,
+                          radius: 28,
+                          color: colorScheme.surfaceContainerHighest,
+                        ),
                       ),
-                    );
-                  }),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: M3EShimmer(
+                        child: M3ESkeletonBox(
+                          width: double.infinity,
+                          height: 315,
+                          radius: 28,
+                          color: colorScheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 24,
+                      child: M3EShimmer(
+                        child: M3ESkeletonBox(
+                          width: 24,
+                          height: 315,
+                          radius: 28,
+                          color: colorScheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
