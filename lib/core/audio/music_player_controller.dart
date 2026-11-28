@@ -137,8 +137,9 @@ class MusicPlayerController extends ChangeNotifier {
   Duration _bufferedPosition = Duration.zero;
 
   /// Fine-grained playback position notifier for UI seekbars without rebuilding entire widget trees.
-  final ValueNotifier<Duration> positionNotifier =
-      ValueNotifier<Duration>(Duration.zero);
+  final ValueNotifier<Duration> positionNotifier = ValueNotifier<Duration>(
+    Duration.zero,
+  );
 
   /// Fine-grained buffered duration notifier for UI progress indicators without rebuilding entire widget trees.
   final ValueNotifier<Duration> bufferedPositionNotifier =
@@ -254,10 +255,7 @@ class MusicPlayerController extends ChangeNotifier {
       if (_currentSong == null) {
         final songToRestore = _getFallbackRestoreSong();
         if (songToRestore != null) {
-          _restoreSongState(
-            songToRestore,
-            isPlaying: _player.playing,
-          );
+          _restoreSongState(songToRestore, isPlaying: _player.playing);
         }
       }
 
@@ -309,7 +307,8 @@ class MusicPlayerController extends ChangeNotifier {
       if (_player.duration != null && _player.duration! > Duration.zero) {
         _duration = _player.duration!;
       }
-    } else if (_lastSavedPosition != null && _lastSavedPosition! > Duration.zero) {
+    } else if (_lastSavedPosition != null &&
+        _lastSavedPosition! > Duration.zero) {
       _position = _lastSavedPosition!;
       positionNotifier.value = _lastSavedPosition!;
     }
@@ -354,11 +353,15 @@ class MusicPlayerController extends ChangeNotifier {
   Color getLegibleAccentColor(bool isDark) {
     final hsl = HSLColor.fromColor(_dynamicAccentColor);
     if (isDark) {
-      final lightness = hsl.lightness < 0.60 ? 0.65 : hsl.lightness.clamp(0.60, 0.88);
+      final lightness = hsl.lightness < 0.60
+          ? 0.65
+          : hsl.lightness.clamp(0.60, 0.88);
       final saturation = hsl.saturation < 0.55 ? 0.65 : hsl.saturation;
       return hsl.withLightness(lightness).withSaturation(saturation).toColor();
     } else {
-      final lightness = hsl.lightness > 0.40 ? 0.35 : hsl.lightness.clamp(0.20, 0.40);
+      final lightness = hsl.lightness > 0.40
+          ? 0.35
+          : hsl.lightness.clamp(0.20, 0.40);
       final saturation = hsl.saturation < 0.65 ? 0.75 : hsl.saturation;
       return hsl.withLightness(lightness).withSaturation(saturation).toColor();
     }
@@ -398,7 +401,8 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Toggles between light and dark theme mode based on context brightness and persists choice.
   void toggleThemeMode(BuildContext context) {
-    final currentIsDark = _themeMode == ThemeMode.dark ||
+    final currentIsDark =
+        _themeMode == ThemeMode.dark ||
         (_themeMode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
     _themeMode = currentIsDark ? ThemeMode.light : ThemeMode.dark;
@@ -525,19 +529,19 @@ class MusicPlayerController extends ChangeNotifier {
     if (s == null) return;
     s.onDownloadProgressUpdated =
         (SongModel song, int percent, bool isComplete) {
-      if (isComplete) {
-        DownloadNotificationService.showComplete(
-          id: song.id,
-          title: song.title,
-        );
-      } else {
-        DownloadNotificationService.showProgress(
-          id: song.id,
-          title: song.title,
-          percent: percent,
-        );
-      }
-    };
+          if (isComplete) {
+            DownloadNotificationService.showComplete(
+              id: song.id,
+              title: song.title,
+            );
+          } else {
+            DownloadNotificationService.showProgress(
+              id: song.id,
+              title: song.title,
+              percent: percent,
+            );
+          }
+        };
 
     s.onDownloadCancelled = (SongModel song) {
       DownloadNotificationService.cancel(id: song.id);
@@ -616,6 +620,7 @@ class MusicPlayerController extends ChangeNotifier {
         }
         _prefetchUpcomingStreams();
       }
+
       /// Note: Position ticks only notify positionNotifier listeners.
       /// We avoid broadcast notifyListeners() to prevent re-rendering the entire app 5-10 times/second.
     });
@@ -664,44 +669,51 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Listens to system audio session events such as headphone disconnects and interruptions.
   void _initAudioSessionListeners() {
-    AudioSession.instance.then((session) {
-      _noisySubscription = session.becomingNoisyEventStream.listen((_) {
-        if (isPlaying) {
-          pause();
-        }
-      });
+    AudioSession.instance
+        .then((session) {
+          _noisySubscription = session.becomingNoisyEventStream.listen((_) {
+            if (isPlaying) {
+              pause();
+            }
+          });
 
-      _interruptionSubscription =
-          session.interruptionEventStream.listen((event) {
-        if (event.begin) {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(0.5);
-              break;
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.unknown:
-              if (isPlaying) {
-                pause();
+          _interruptionSubscription = session.interruptionEventStream.listen((
+            event,
+          ) {
+            if (event.begin) {
+              switch (event.type) {
+                case AudioInterruptionType.duck:
+                  _player.setVolume(0.5);
+                  break;
+                case AudioInterruptionType.pause:
+                case AudioInterruptionType.unknown:
+                  if (isPlaying) {
+                    pause();
+                  }
+                  break;
               }
-              break;
-          }
-        } else {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(1.0);
-              break;
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.unknown:
-              break;
-          }
-        }
-      });
-    }).catchError((dynamic err) {
-      debugPrint('[MusicPlayerController] AudioSession listener error: $err');
-    });
+            } else {
+              switch (event.type) {
+                case AudioInterruptionType.duck:
+                  _player.setVolume(1.0);
+                  break;
+                case AudioInterruptionType.pause:
+                case AudioInterruptionType.unknown:
+                  break;
+              }
+            }
+          });
+        })
+        .catchError((dynamic err) {
+          debugPrint(
+            '[MusicPlayerController] AudioSession listener error: $err',
+          );
+        });
 
     _lastRouteType = AudioRouteService.instance.currentRouteNotifier.value.type;
-    AudioRouteService.instance.currentRouteNotifier.addListener(_handleAudioRouteChanged);
+    AudioRouteService.instance.currentRouteNotifier.addListener(
+      _handleAudioRouteChanged,
+    );
   }
 
   /// Handles audio output route changes to pause playback when external devices disconnect.
@@ -870,8 +882,7 @@ class MusicPlayerController extends ChangeNotifier {
             final audioSource = ja.AudioSource.uri(
               Uri.parse(candidateUrl),
               headers: const <String, String>{
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
                 'Referer': 'https://www.youtube.com/',
               },
             );
@@ -1079,10 +1090,7 @@ class MusicPlayerController extends ChangeNotifier {
       song.isLiked = true;
       _likedSongs.insert(0, song);
     }
-    behaviorTracker.recordExplicitAction(
-      song,
-      isLike: song.isLiked,
-    );
+    behaviorTracker.recordExplicitAction(song, isLike: song.isLiked);
     unawaited(_persistLikedSongs());
     notifyListeners();
   }
@@ -1215,7 +1223,8 @@ class MusicPlayerController extends ChangeNotifier {
 
     try {
       /// Seed strictly from the active track or currently playing track.
-      final seedSong = _currentSong ??
+      final seedSong =
+          _currentSong ??
           ((_currentIndex >= 0 && _currentIndex < _queue.length)
               ? _queue[_currentIndex]
               : (_queue.isNotEmpty ? _queue.first : null));
@@ -1226,8 +1235,8 @@ class MusicPlayerController extends ChangeNotifier {
       }
 
       /// 1. Primary: Use YouTube's official watch-next recommendation engine.
-      List<SongModel> candidates =
-          await innerTubeClient.getWatchNextRecommendations(seedSong.id);
+      List<SongModel> candidates = await innerTubeClient
+          .getWatchNextRecommendations(seedSong.id);
 
       /// 2. Fallback: If watch-next returned fewer than 6, search specifically by seed artist and title.
       if (candidates.length < 6) {
@@ -1342,14 +1351,16 @@ class MusicPlayerController extends ChangeNotifier {
         maximumColorCount: 16,
       );
 
-      Color baseColor = palette.darkVibrantColor?.color ??
+      Color baseColor =
+          palette.darkVibrantColor?.color ??
           palette.darkMutedColor?.color ??
           palette.dominantColor?.color ??
           palette.vibrantColor?.color ??
           const Color(0xFFFF4E4E);
 
       if (HSLColor.fromColor(baseColor).saturation < 0.15) {
-        final withChroma = palette.dominantColor?.color ??
+        final withChroma =
+            palette.dominantColor?.color ??
             palette.vibrantColor?.color ??
             palette.lightVibrantColor?.color;
         if (withChroma != null &&
@@ -1360,10 +1371,12 @@ class MusicPlayerController extends ChangeNotifier {
 
       final hsl = HSLColor.fromColor(baseColor);
 
-      final accentLightness =
-          hsl.lightness < 0.45 ? 0.54 : hsl.lightness.clamp(0.48, 0.68);
-      final accentSaturation =
-          hsl.saturation < 0.45 ? 0.75 : hsl.saturation.clamp(0.60, 0.95);
+      final accentLightness = hsl.lightness < 0.45
+          ? 0.54
+          : hsl.lightness.clamp(0.48, 0.68);
+      final accentSaturation = hsl.saturation < 0.45
+          ? 0.75
+          : hsl.saturation.clamp(0.60, 0.95);
       final vibrantAccent = hsl
           .withLightness(accentLightness)
           .withSaturation(accentSaturation)
@@ -1467,7 +1480,11 @@ class MusicPlayerController extends ChangeNotifier {
       playlistService.removeSongFromPlaylist(playlistId, songId);
 
   /// Plays a full custom playlist starting from [startIndex], with optional shuffle mode.
-  void playPlaylist(PlaylistModel playlist, {int startIndex = 0, bool shuffle = false}) {
+  void playPlaylist(
+    PlaylistModel playlist, {
+    int startIndex = 0,
+    bool shuffle = false,
+  }) {
     if (playlist.songs.isEmpty) return;
     _isPlaylistQueue = true;
     if (shuffle) {
@@ -1477,7 +1494,11 @@ class MusicPlayerController extends ChangeNotifier {
     } else {
       _isShuffle = false;
       final targetIndex = startIndex.clamp(0, playlist.songs.length - 1);
-      playSong(playlist.songs[targetIndex], newQueue: playlist.songs, isPlaylistQueue: true);
+      playSong(
+        playlist.songs[targetIndex],
+        newQueue: playlist.songs,
+        isPlaylistQueue: true,
+      );
     }
   }
 
@@ -1745,8 +1766,9 @@ class MusicPlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
-    AudioRouteService.instance.currentRouteNotifier
-        .removeListener(_handleAudioRouteChanged);
+    AudioRouteService.instance.currentRouteNotifier.removeListener(
+      _handleAudioRouteChanged,
+    );
     _noisySubscription?.cancel();
     _interruptionSubscription?.cancel();
     _playingSubscription?.cancel();
