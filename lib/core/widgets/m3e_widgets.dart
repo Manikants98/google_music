@@ -430,7 +430,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                     child: M3ESkeletonBox(
                       width: double.infinity,
                       height: 205,
-                      radius: 24,
+                      radius: 12,
                       color: colorScheme.surfaceContainerHighest,
                     ),
                   ),
@@ -442,7 +442,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                     child: M3ESkeletonBox(
                       width: double.infinity,
                       height: 205,
-                      radius: 24,
+                      radius: 12,
                       color: colorScheme.surfaceContainerHighest,
                     ),
                   ),
@@ -454,7 +454,7 @@ class HomeScreenSkeleton extends StatelessWidget {
                     child: M3ESkeletonBox(
                       width: double.infinity,
                       height: 205,
-                      radius: 24,
+                      radius: 12,
                       color: colorScheme.surfaceContainerHighest,
                     ),
                   ),

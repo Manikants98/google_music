@@ -79,7 +79,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
             freeScroll: false,
             showAll: false,
             haptic: M3EHapticFeedback.light,
-            childElementBorderRadius: 24,
+            childElementBorderRadius: 12,
             scrollAnimationDuration: 400,
             children: displaySongs.map((song) {
               final isCurrentActiveTrack =
