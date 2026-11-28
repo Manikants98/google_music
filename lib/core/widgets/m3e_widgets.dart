@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../models/song_model.dart';
@@ -613,73 +612,248 @@ class HomeScreenSkeleton extends StatelessWidget {
   }
 }
 
+/// Type of skeleton layout to display based on the active search filter.
+enum SearchSkeletonType {
+  /// Both songs and playlists preview skeleton.
+  all,
+
+  /// Full songs list skeleton.
+  songs,
+
+  /// Grid of playlists skeleton.
+  playlists,
+}
+
 /// Search results skeleton loader styled with active theme colors.
 class SearchScreenSkeleton extends StatelessWidget {
   /// Horizontal padding matching app standard.
   final double horizontalPadding;
 
+  /// Layout type to display.
+  final SearchSkeletonType type;
+
+  /// Whether running in desktop mode.
+  final bool isDesktop;
+
   /// Creates search screen skeleton.
-  const SearchScreenSkeleton({super.key, this.horizontalPadding = 12.0});
+  const SearchScreenSkeleton({
+    super.key,
+    this.horizontalPadding = 12.0,
+    this.type = SearchSkeletonType.all,
+    this.isDesktop = false,
+  });
+
+  Widget _buildSongRow(
+    BuildContext context,
+    ColorScheme colorScheme,
+    int index,
+    bool isLast,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Row(
+        children: <Widget>[
+          M3ESkeletonBox(
+            width: 44,
+            height: 44,
+            radius: 8,
+            color: colorScheme.surfaceContainerHigh,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                M3ESkeletonBox(
+                  width: (index % 2 == 0) ? 160 : 130,
+                  height: 13,
+                  radius: 4,
+                  color: colorScheme.surfaceContainerHigh,
+                ),
+                const SizedBox(height: 6),
+                M3ESkeletonBox(
+                  width: (index % 2 == 0) ? 95 : 75,
+                  height: 10,
+                  radius: 3,
+                  color: colorScheme.surfaceContainerHigh,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          M3ESkeletonBox(
+            width: 18,
+            height: 18,
+            radius: 9,
+            color: colorScheme.surfaceContainerHigh,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaylistSkeletonCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    int index, {
+    double? width,
+  }) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: M3EShimmer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: M3ESkeletonBox(
+                width: double.infinity,
+                height: double.infinity,
+                radius: 10,
+                color: colorScheme.surfaceContainerHigh,
+              ),
+            ),
+            const SizedBox(height: 10),
+            M3ESkeletonBox(
+              width: (index % 2 == 0) ? 95 : 80,
+              height: 12,
+              radius: 3,
+              color: colorScheme.surfaceContainerHigh,
+            ),
+            const SizedBox(height: 6),
+            M3ESkeletonBox(
+              width: (index % 2 == 0) ? 60 : 45,
+              height: 10,
+              radius: 3,
+              color: colorScheme.surfaceContainerHigh,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    if (type == SearchSkeletonType.playlists) {
+      return GridView.builder(
+        padding:
+            EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 120),
+        physics: const BouncingScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: isDesktop ? 4 : 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isDesktop ? 0.76 : 0.72,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return _buildPlaylistSkeletonCard(context, colorScheme, index);
+        },
+      );
+    }
+
+    if (type == SearchSkeletonType.songs) {
+      return ListView(
+        padding:
+            EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 120),
+        physics: const BouncingScrollPhysics(),
+        children: <Widget>[
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            child: M3EShimmer(
+              child: Column(
+                children: List<Widget>.generate(8, (index) {
+                  return _buildSongRow(context, colorScheme, index, index == 7);
+                }),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Default: SearchSkeletonType.all
     return ListView(
       padding:
-          EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
+          EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 120),
       physics: const BouncingScrollPhysics(),
       children: <Widget>[
-        M3EShimmer(
-          child: M3EList(
-            color: colorScheme.surfaceContainerHighest,
-            outerRadius: 12,
-            innerRadius: 4,
-            gap: 2,
-            itemCount: 7,
-            itemBuilder: (BuildContext context, int index) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: <Widget>[
-                    M3ESkeletonBox(
-                      width: 48,
-                      height: 48,
-                      radius: 10,
-                      color: colorScheme.surfaceContainerHigh,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          M3ESkeletonBox(
-                            width: (index % 2 == 0) ? 150 : 180,
-                            height: 14,
-                            radius: 4,
-                            color: colorScheme.surfaceContainerHigh,
-                          ),
-                          const SizedBox(height: 6),
-                          M3ESkeletonBox(
-                            width: (index % 2 == 0) ? 100 : 80,
-                            height: 11,
-                            radius: 3,
-                            color: colorScheme.surfaceContainerHigh,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    M3ESkeletonBox(
-                      width: 20,
-                      height: 20,
-                      radius: 4,
-                      color: colorScheme.surfaceContainerHigh,
-                    ),
-                  ],
-                ),
+        // Songs section title skeleton
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: M3EShimmer(
+            child: M3ESkeletonBox(
+              width: 64,
+              height: 16,
+              radius: 4,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ),
+
+        // Songs list container skeleton
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          child: M3EShimmer(
+            child: Column(
+              children: List<Widget>.generate(5, (index) {
+                return _buildSongRow(context, colorScheme, index, index == 4);
+              }),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Playlists section title skeleton
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: M3EShimmer(
+            child: M3ESkeletonBox(
+              width: 76,
+              height: 16,
+              radius: 4,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ),
+
+        // Horizontal Playlists Cards skeleton
+        SizedBox(
+          height: 205,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 4,
+            separatorBuilder: (_, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _buildPlaylistSkeletonCard(
+                context,
+                colorScheme,
+                index,
+                width: 135,
               );
             },
           ),

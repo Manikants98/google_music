@@ -345,7 +345,15 @@ class _SearchScreenState extends State<SearchScreen> {
             // Main Content Area
             Expanded(
               child: _isSearching
-                  ? SearchScreenSkeleton(horizontalPadding: hPad)
+                  ? SearchScreenSkeleton(
+                      horizontalPadding: hPad,
+                      isDesktop: isDesktop,
+                      type: _selectedTab == SearchTab.playlists
+                          ? SearchSkeletonType.playlists
+                          : _selectedTab == SearchTab.songs
+                              ? SearchSkeletonType.songs
+                              : SearchSkeletonType.all,
+                    )
                   : _hasSearched
                       ? _buildSearchResults(
                           context,
@@ -502,7 +510,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               SizedBox(
-                height: 195,
+                height: 205,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _playlistResults.length.clamp(0, 8),
@@ -608,7 +616,7 @@ class _SearchScreenState extends State<SearchScreen> {
         crossAxisCount: isDesktop ? 4 : 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.82,
+        childAspectRatio: isDesktop ? 0.76 : 0.72,
       ),
       itemCount: _playlistResults.length,
       itemBuilder: (context, index) {
@@ -636,11 +644,16 @@ class _SearchScreenState extends State<SearchScreen> {
         width: width,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+            width: 1,
+          ),
         ),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             AspectRatio(
               aspectRatio: 1.0,
@@ -655,7 +668,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: colorScheme.surfaceContainerHigh,
                           child: Icon(
                             Icons.queue_music_rounded,
-                            size: 40,
+                            size: 38,
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -664,13 +677,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         color: colorScheme.surfaceContainerHigh,
                         child: Icon(
                           Icons.queue_music_rounded,
-                          size: 40,
+                          size: 38,
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               playlist.name,
               maxLines: 1,
@@ -678,20 +691,21 @@ class _SearchScreenState extends State<SearchScreen> {
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
+                letterSpacing: -0.2,
               ),
             ),
-            if (playlist.author != null && playlist.author!.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 2),
-              Text(
-                playlist.author!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
+            const SizedBox(height: 2),
+            Text(
+              (playlist.author != null && playlist.author!.isNotEmpty)
+                  ? playlist.author!
+                  : 'Playlist',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
               ),
-            ],
+            ),
           ],
         ),
       ),
