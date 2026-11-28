@@ -11,6 +11,7 @@ import '../../../models/song_model.dart';
 import 'audio_output_sheet.dart';
 import 'queue_bottom_sheet.dart';
 import 'sleep_timer_sheet.dart';
+import 'widgets/liquid_mesh_background.dart';
 
 /// Full screen immersive Google Music player with responsive dynamic layout and wavy soundwave slider.
 class NowPlayingSheet extends StatelessWidget {
@@ -65,18 +66,19 @@ class NowPlayingSheet extends StatelessWidget {
     final sheetContent = SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 600),
-        color: theme.scaffoldBackgroundColor,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: controller.getDynamicGradient(isDark),
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          // 🌊 Apple Music Liquid Mesh Canvas Background
+          LiquidMeshBackground(
+            primaryColor: accent,
+            paletteColors: controller.dynamicPaletteColors,
+            isPlaying: controller.status == PlayerStatus.playing,
+            isDark: isDark,
           ),
-          child: SafeArea(
+
+          // Player Foreground Content
+          SafeArea(
             top: true,
             bottom: true,
             child: Padding(
@@ -251,7 +253,7 @@ class NowPlayingSheet extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
 

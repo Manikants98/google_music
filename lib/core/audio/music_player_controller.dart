@@ -97,6 +97,9 @@ class MusicPlayerController extends ChangeNotifier {
     Color(0xFF0F0F13),
   ];
 
+  /// Extracted artwork palette colors for fluid liquid mesh canvas.
+  List<Color> _dynamicPaletteColors = const <Color>[];
+
   /// Active application theme mode.
   ThemeMode _themeMode = ThemeMode.system;
 
@@ -377,6 +380,9 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Dynamic gradient colors for immersive player background.
   List<Color> get dynamicGradient => _dynamicGradient;
+
+  /// Extracted palette colors for liquid mesh canvas background.
+  List<Color> get dynamicPaletteColors => _dynamicPaletteColors;
 
   /// Returns light or dark dynamic gradient based on active brightness.
   List<Color> getDynamicGradient(bool isDark) {
@@ -1399,7 +1405,24 @@ class MusicPlayerController extends ChangeNotifier {
           .withSaturation(hsl.saturation.clamp(0.45, 0.85))
           .toColor();
 
+      // Extract up to 4 rich palette colors for liquid mesh canvas
+      final paletteList = <Color>[];
+      void addValidColor(Color? c) {
+        if (c != null &&
+            !paletteList.any((existing) => existing.toARGB32() == c.toARGB32())) {
+          paletteList.add(c);
+        }
+      }
+
+      addValidColor(palette.vibrantColor?.color);
+      addValidColor(palette.lightVibrantColor?.color);
+      addValidColor(palette.darkVibrantColor?.color);
+      addValidColor(palette.dominantColor?.color);
+      addValidColor(palette.mutedColor?.color);
+      addValidColor(palette.lightMutedColor?.color);
+
       _dynamicAccentColor = vibrantAccent;
+      _dynamicPaletteColors = paletteList;
       _dynamicGradient = <Color>[
         gradientBase.withValues(alpha: 0.90),
         const Color(0xFF0F0F13),
