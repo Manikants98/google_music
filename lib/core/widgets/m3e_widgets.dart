@@ -418,18 +418,40 @@ class HomeScreenSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: M3EShimmer(
-            child: M3ESkeletonBox(
-              width: double.infinity,
-              height: 195,
-              radius: 24,
-              color: colorScheme.surfaceContainerHighest,
-            ),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              M3EShimmer(
+                child: M3ESkeletonBox(
+                  width: double.infinity,
+                  height: 185,
+                  radius: 12,
+                  color: colorScheme.surfaceContainerHighest,
+                ),
+              ),
+              const SizedBox(height: 8),
+              M3EShimmer(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List<Widget>.generate(5, (index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: index == 0 ? 18 : 6,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
           child: M3EShimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,7 +474,7 @@ class HomeScreenSkeleton extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Container(
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
@@ -502,7 +524,7 @@ class HomeScreenSkeleton extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 26, 16, 14),
+          padding: const EdgeInsets.fromLTRB(12, 26, 12, 14),
           child: M3EShimmer(
             child: M3ESkeletonBox(
               width: 160,
@@ -517,7 +539,7 @@ class HomeScreenSkeleton extends StatelessWidget {
           child: M3EShimmer(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               itemCount: 4,
               separatorBuilder: (context, index) => const SizedBox(width: 14),
               itemBuilder: (context, index) {

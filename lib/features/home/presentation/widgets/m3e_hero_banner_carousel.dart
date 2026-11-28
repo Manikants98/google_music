@@ -96,7 +96,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.90);
+    _pageController = PageController(viewportFraction: 1.0);
     _startAutoScroll();
   }
 
@@ -148,10 +148,15 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
 
     // Constrain to maximum 5 blockbuster tracks for the hero carousel
     final displaySongs = widget.songs.take(5).toList();
-    final double carouselHeight = isDesktop ? 220 : 195;
+    final double carouselHeight = isDesktop ? 215 : 185;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.fromLTRB(
+        isDesktop ? 24 : 12,
+        8,
+        isDesktop ? 24 : 12,
+        4,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -177,46 +182,22 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                   final isCurrentPlaying =
                       isCurrentActiveTrack && widget.isPlaying;
 
-                  return AnimatedBuilder(
-                    animation: _pageController,
-                    builder: (BuildContext context, Widget? child) {
-                      double value = 0.0;
-                      if (_pageController.position.haveDimensions) {
-                        final page = _pageController.page ?? _currentPage.toDouble();
-                        value = (page - index).clamp(-1.0, 1.0);
-                      } else {
-                        value = (_currentPage - index).toDouble().clamp(-1.0, 1.0);
-                      }
-
-                      // Material 3 Expressive motion physics: slight scale & opacity on neighbor cards
-                      final double scale = 1.0 - (value.abs() * 0.06);
-                      final double opacity = 1.0 - (value.abs() * 0.22);
-
-                      return Transform.scale(
-                        scale: scale,
-                        child: Opacity(
-                          opacity: opacity.clamp(0.65, 1.0),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _buildBannerCard(
-                      context: context,
-                      song: song,
-                      badge: badge,
-                      isCurrentActiveTrack: isCurrentActiveTrack,
-                      isCurrentPlaying: isCurrentPlaying,
-                      colorScheme: colorScheme,
-                      theme: theme,
-                      isDark: isDark,
-                      displaySongs: displaySongs,
-                    ),
+                  return _buildBannerCard(
+                    context: context,
+                    song: song,
+                    badge: badge,
+                    isCurrentActiveTrack: isCurrentActiveTrack,
+                    isCurrentPlaying: isCurrentPlaying,
+                    colorScheme: colorScheme,
+                    theme: theme,
+                    isDark: isDark,
+                    displaySongs: displaySongs,
                   );
                 },
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           // Material You Smooth Pill Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -234,8 +215,8 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOutCubic,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: isSelected ? 22 : 6,
-                  height: 6,
+                  width: isSelected ? 18 : 6,
+                  height: 5,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(3),
                     color: isSelected
@@ -267,19 +248,19 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
     final accent = colorScheme.primary;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.16),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
@@ -310,58 +291,42 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
               ),
             ),
 
-            // 2. Material You Cinematic Gradient Scrim:
-            // Multi-stop darkening with bottom-left accent bloom for expressive color harmony
+            // 2. Cinematic Gradient Scrim:
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: const <double>[0.0, 0.35, 0.70, 1.0],
+                  stops: const <double>[0.0, 0.30, 0.65, 1.0],
                   colors: <Color>[
-                    Colors.black.withValues(alpha: 0.50),
-                    Colors.black.withValues(alpha: 0.10),
-                    Colors.black.withValues(alpha: 0.75),
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.68),
                     Colors.black.withValues(alpha: 0.94),
                   ],
                 ),
               ),
             ),
 
-            // 3. Material You Dynamic Accent Glow at bottom
-            Positioned(
-              left: -30,
-              bottom: -40,
-              child: Container(
-                width: 180,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: 0.22),
-                  backgroundBlendMode: BlendMode.screen,
-                ),
-              ),
-            ),
-
-            // 4. Subtle Material 3 Outline Border
+            // 3. Subtle Outline Border matching 12dp grid
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.24),
+                  color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.18),
                   width: 1,
                 ),
               ),
             ),
 
-            // 5. Card Content (Badges, Titles, and Expressive Play Button)
+            // 4. Card Content (Badges, Titles, and Expressive Play Button)
             Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(12),
                 onTap: () => widget.onPlay(song, displaySongs),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -371,17 +336,17 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(8),
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
+                                  horizontal: 9,
+                                  vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.52),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.black.withValues(alpha: 0.55),
+                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: badge.accentColor.withValues(alpha: 0.45),
                                     width: 1,
@@ -398,11 +363,11 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                                     const SizedBox(width: 5),
                                     Text(
                                       badge.label,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w800,
-                                        fontSize: 10.5,
-                                        letterSpacing: 0.6,
+                                        fontSize: 10,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ],
@@ -418,7 +383,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                               ),
                               decoration: BoxDecoration(
                                 color: accent.withValues(alpha: 0.90),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -429,9 +394,9 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                                     color: Colors.black,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
+                                  const Text(
                                     'PLAYING',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w800,
                                       fontSize: 9.5,
@@ -460,11 +425,11 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w800,
-                                    fontSize: 17,
+                                    fontSize: 16,
                                     letterSpacing: -0.3,
                                     shadows: <Shadow>[
                                       Shadow(
-                                        color: Colors.black54,
+                                        color: Colors.black87,
                                         blurRadius: 8,
                                         offset: Offset(0, 1),
                                       ),
@@ -479,12 +444,12 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.82),
-                                    fontSize: 12.5,
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     shadows: const <Shadow>[
                                       Shadow(
-                                        color: Colors.black54,
+                                        color: Colors.black87,
                                         blurRadius: 6,
                                         offset: Offset(0, 1),
                                       ),
@@ -497,16 +462,16 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                           const SizedBox(width: 12),
                           // Material 3 Expressive Play Button
                           Container(
-                            width: 46,
-                            height: 46,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
                               color: accent,
                               shape: BoxShape.circle,
                               boxShadow: <BoxShadow>[
                                 BoxShadow(
                                   color: accent.withValues(alpha: 0.45),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
@@ -514,7 +479,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                               isCurrentPlaying
                                   ? Icons.pause_rounded
                                   : Icons.play_arrow_rounded,
-                              size: 28,
+                              size: 26,
                               color: colorScheme.onPrimary,
                             ),
                           ),
