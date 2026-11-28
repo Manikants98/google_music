@@ -86,6 +86,10 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                   widget.currentPlayingSong?.id == song.id;
               final isCurrentPlaying = isCurrentActiveTrack && widget.isPlaying;
               return M3ECarouselItem(
+                onTap: () {
+                  M3EHaptics.trigger(M3EHapticFeedback.light);
+                  widget.onPlay(song, displaySongs);
+                },
                 image: Stack(
                   fit: StackFit.expand,
                   children: <Widget>[
@@ -120,7 +124,26 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                               ),
                     ),
 
-                    // 2. Active Now Playing Badge Pill (Top-Right)
+                    // 2. Multi-stop cinematic dark gradient vignette
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const <double>[0.0, 0.35, 0.65, 1.0],
+                            colors: <Color>[
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.05),
+                              Colors.black.withValues(alpha: 0.55),
+                              Colors.black.withValues(alpha: 0.90),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 3. Active Now Playing Badge Pill (Top-Right)
                     if (isCurrentPlaying)
                       Positioned(
                         top: 12,
@@ -131,8 +154,12 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
+                            color: Colors.black.withValues(alpha: 0.75),
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.50),
+                              width: 1,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -157,79 +184,92 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                         ),
                       ),
 
-                    // 3. Floating Circular Play Button (Bottom-Right)
+                    // 4. Bottom Info Bar: Song Info + Vibrant High-Contrast Play Button
                     Positioned(
-                      right: 12,
+                      left: 14,
+                      right: 14,
                       bottom: 12,
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: isCurrentPlaying
-                              ? accent
-                              : colorScheme.primaryContainer,
-                          shape: BoxShape.circle,
-                          boxShadow: <BoxShadow>[
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.40),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: <Widget>[
+                          // Left: Song Title & Artist
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  song.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16.5,
+                                    letterSpacing: -0.2,
+                                    shadows: <Shadow>[
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  song.artist,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12.5,
+                                    letterSpacing: -0.1,
+                                    shadows: const <Shadow>[
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 6,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          isCurrentPlaying
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                          size: 26,
-                          color: isCurrentPlaying
-                              ? colorScheme.onPrimary
-                              : colorScheme.onPrimaryContainer,
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Right: Vibrant High-Contrast Play Button FAB
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isCurrentPlaying ? accent : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: <BoxShadow>[
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.40),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              isCurrentPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              size: 26,
+                              color: isCurrentPlaying
+                                  ? colorScheme.onPrimary
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                title: Text(
-                  song.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    letterSpacing: -0.2,
-                    shadows: <Shadow>[
-                      Shadow(
-                        color: Colors.black87,
-                        blurRadius: 6,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-                subtitle: Text(
-                  song.artist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.90),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.5,
-                    shadows: const <Shadow>[
-                      Shadow(
-                        color: Colors.black87,
-                        blurRadius: 6,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-                showScrim: const M3ECarouselScrim.gradient(),
-                onTap: () {
-                  M3EHaptics.trigger(M3EHapticFeedback.light);
-                  widget.onPlay(song, displaySongs);
-                },
               );
             }).toList(),
           ),
