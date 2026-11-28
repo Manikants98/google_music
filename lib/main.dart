@@ -325,7 +325,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isDesktop = screenWidth > 750;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -349,58 +348,46 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ),
               ),
             ),
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer.withValues(
-                    alpha: isDark ? 0.85 : 0.90,
-                  ),
+          Container(
+            decoration: BoxDecoration(color: colorScheme.surfaceContainer),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 36 : 16,
+                  vertical: 8,
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 36 : 16,
-                      vertical: 8,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 800),
-                        child: GNav(
-                          selectedIndex: _selectedTab,
-                          onTabChange: _onTabSelected,
-                          gap: 8,
-                          activeColor: accent,
-                          iconSize: 22,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          duration: const Duration(milliseconds: 350),
-                          tabBackgroundColor: accent.withValues(alpha: 0.16),
-                          color: colorScheme.onSurfaceVariant,
-                          tabBorderRadius: 24,
-                          textStyle: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                          tabs: const <GButton>[
-                            GButton(icon: Icons.home_rounded, text: 'Home'),
-                            GButton(icon: Icons.search_rounded, text: 'Search'),
-                            GButton(
-                              icon: Icons.library_music_rounded,
-                              text: 'Library',
-                            ),
-                            GButton(
-                              icon: Icons.settings_rounded,
-                              text: 'Settings',
-                            ),
-                          ],
-                        ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: GNav(
+                      selectedIndex: _selectedTab,
+                      onTabChange: _onTabSelected,
+                      gap: 8,
+                      activeColor: accent,
+                      iconSize: 22,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
                       ),
+                      duration: const Duration(milliseconds: 350),
+                      tabBackgroundColor: accent.withValues(alpha: 0.16),
+                      color: colorScheme.onSurfaceVariant,
+                      tabBorderRadius: 24,
+                      textStyle: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                      tabs: const <GButton>[
+                        GButton(icon: Icons.home_rounded, text: 'Home'),
+                        GButton(icon: Icons.search_rounded, text: 'Search'),
+                        GButton(
+                          icon: Icons.library_music_rounded,
+                          text: 'Library',
+                        ),
+                        GButton(icon: Icons.settings_rounded, text: 'Settings'),
+                      ],
                     ),
                   ),
                 ),

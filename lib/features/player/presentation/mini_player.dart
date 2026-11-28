@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:material_ui/material_ui.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:provider/provider.dart';
@@ -197,21 +195,17 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              height: 58,
-              decoration: BoxDecoration(
-                color: Color.alphaBlend(
-                  accent.withValues(alpha: isDark ? 0.28 : 0.18),
-                  colorScheme.surfaceContainerHighest.withValues(
-                    alpha: isDark ? 0.85 : 0.90,
-                  ),
-                ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+            height: 58,
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(
+                accent.withValues(alpha: isDark ? 0.28 : 0.18),
+                colorScheme.surfaceContainerHighest,
               ),
-              child: Stack(
+            ),
+            child: Stack(
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -369,7 +363,6 @@ class _MiniPlayerPillState extends State<MiniPlayerPill>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
