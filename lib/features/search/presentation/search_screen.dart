@@ -217,7 +217,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: <Widget>[
             // Search Input Field
             Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
+              padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 0),
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
@@ -288,10 +288,10 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
 
-            // Top Filter Chips (using standard M3EChip to match Home & Library)
+            // Top Filter Chips (vertically centered with symmetric space)
             if (_hasSearched || _searchCtrl.text.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 child: SizedBox(
                   height: 38,
                   child: ListView(
@@ -432,7 +432,7 @@ class _SearchScreenState extends State<SearchScreen> {
             // Top Songs Section
             if (_searchResults.isNotEmpty) ...<Widget>[
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -474,13 +474,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
             ],
 
             // Playlists Section (Carousel)
             if (_playlistResults.isNotEmpty) ...<Widget>[
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -527,13 +527,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
             ],
 
             // Additional Songs if any
             if (_searchResults.length > 5) ...<Widget>[
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
                   'More Songs',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -611,7 +611,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 120),
+      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isDesktop ? 4 : 2,
         mainAxisSpacing: 12,
@@ -725,11 +725,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return CustomScrollView(
       slivers: <Widget>[
+        // Top spacing from search bar to first section
+        const SliverToBoxAdapter(child: SizedBox(height: 14)),
+
         // Recent Searches Section
         if (recentSearches.isNotEmpty) ...<Widget>[
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 8),
+              padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -783,13 +786,13 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
 
         // Browse By Language Section
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 12),
+            padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 10),
             child: Text(
               'Browse by language',
               style: theme.textTheme.titleMedium?.copyWith(

@@ -751,7 +751,7 @@ class SearchScreenSkeleton extends StatelessWidget {
     if (type == SearchSkeletonType.playlists) {
       return GridView.builder(
         padding:
-            EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 120),
+            EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
         physics: const BouncingScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: isDesktop ? 4 : 2,
@@ -769,7 +769,7 @@ class SearchScreenSkeleton extends StatelessWidget {
     if (type == SearchSkeletonType.songs) {
       return ListView(
         padding:
-            EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 120),
+            EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
         physics: const BouncingScrollPhysics(),
         children: <Widget>[
           Container(
@@ -793,12 +793,12 @@ class SearchScreenSkeleton extends StatelessWidget {
     // Default: SearchSkeletonType.all
     return ListView(
       padding:
-          EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 120),
+          EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 120),
       physics: const BouncingScrollPhysics(),
       children: <Widget>[
         // Songs section title skeleton
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.only(bottom: 10),
           child: M3EShimmer(
             child: M3ESkeletonBox(
               width: 64,
@@ -825,11 +825,11 @@ class SearchScreenSkeleton extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
         // Playlists section title skeleton
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.only(bottom: 10),
           child: M3EShimmer(
             child: M3ESkeletonBox(
               width: 76,
