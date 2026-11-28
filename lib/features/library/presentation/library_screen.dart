@@ -50,34 +50,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
-        titleSpacing: hPad,
+        titleSpacing: isDesktop ? 24 : 12,
         elevation: 0,
-        title: Row(
-          children: <Widget>[
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.16),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.music_note_rounded,
-                  color: accent,
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Library',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
+        title: Text(
+          'Library',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
         actions: <Widget>[
           IconButton(
@@ -86,45 +65,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             color: colorScheme.onSurface,
             onPressed: widget.onSearchTapped,
           ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: colorScheme.onSurface),
-            tooltip: 'Library Options',
-            color: colorScheme.surfaceContainerHighest,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            onSelected: (value) {
-              if (value == 'new_playlist') {
-                _showCreatePlaylistDialog(context, controller);
-              } else if (value == 'clear_history') {
-                _confirmClearHistory(context, controller);
-              }
-            },
-            itemBuilder: (context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: 'new_playlist',
-                child: Row(
-                  children: <Widget>[
-                    Icon(Icons.playlist_add_rounded, size: 20, color: accent),
-                    const SizedBox(width: 10),
-                    const Text('New Playlist'),
-                  ],
-                ),
-              ),
-              if (history.isNotEmpty)
-                const PopupMenuItem<String>(
-                  value: 'clear_history',
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.delete_sweep_rounded, size: 20, color: Colors.redAccent),
-                      SizedBox(width: 10),
-                      Text('Clear History'),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(width: isDesktop ? 16 : 6),
+          SizedBox(width: isDesktop ? 18 : 6),
         ],
       ),
       body: CustomScrollView(
