@@ -243,8 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsItem(
                 icon: Icons.waves_rounded,
                 title: 'Fluid Animated Background',
-                subtitle:
-                    'Flowing organic liquid mesh canvas in Now Playing',
+                subtitle: 'Flowing organic liquid mesh canvas in Now Playing',
                 trailing: Switch(
                   value: controller.isLiquidMeshEnabled,
                   activeThumbColor: accent,
@@ -591,7 +590,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 50)),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
         ],
       ),
     );

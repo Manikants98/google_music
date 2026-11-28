@@ -8,6 +8,7 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/update/app_update_service.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 import '../../../models/song_model.dart';
+import 'widgets/m3e_hero_banner_carousel.dart';
 
 /// Metadata definition for dynamic categorized home screen sections.
 class _SectionHeaderData {
@@ -739,6 +740,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ] else ...<Widget>[
             if (_tracks.isNotEmpty) ...<Widget>[
+              SliverToBoxAdapter(
+                child: M3EHeroBannerCarousel(
+                  songs: _tracks,
+                  language: _selectedLanguage,
+                  currentPlayingSong: controller.currentSong,
+                  isPlaying: controller.isPlaying,
+                  onPlay: (SongModel song, List<SongModel> queue) {
+                    controller.playSong(song, newQueue: _tracks);
+                  },
+                ),
+              ),
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
                   context: context,

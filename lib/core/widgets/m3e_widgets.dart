@@ -418,7 +418,18 @@ class HomeScreenSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: M3EShimmer(
+            child: M3ESkeletonBox(
+              width: double.infinity,
+              height: 195,
+              radius: 24,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: M3EShimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
