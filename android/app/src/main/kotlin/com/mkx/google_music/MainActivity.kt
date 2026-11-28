@@ -25,6 +25,7 @@ class MainActivity : AudioServiceActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         createNotificationChannel()
+        UpdateCheckJobService.schedulePeriodicCheck(applicationContext)
 
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
         methodChannel = channel
@@ -185,6 +186,12 @@ class MainActivity : AudioServiceActivity() {
                         result.error("INVALID_URL", "URL string is null", null)
                     }
                 }
+                "showUpdateNotification" -> {
+                    val version = call.argument<String>("version") ?: ""
+                    val title = call.argument<String>("title") ?: "New Update Available"
+                    UpdateCheckJobService.showNotificationDirect(this, version, title)
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -205,6 +212,12 @@ class MainActivity : AudioServiceActivity() {
                 methodChannel?.invokeMethod("openDownloads", null)
             } else {
                 pendingRoute = "downloads"
+            }
+        } else if (route == "app_update") {
+            if (methodChannel != null) {
+                methodChannel?.invokeMethod("openAppUpdate", null)
+            } else {
+                pendingRoute = "app_update"
             }
         } else if (action == "com.ryanheise.audioservice.NOTIFICATION_CLICK") {
             if (methodChannel != null) {
@@ -239,6 +252,17 @@ class MainActivity : AudioServiceActivity() {
                 enableVibration(true)
             }
             notificationManager.createNotificationChannel(completeChannel)
+
+            val updateChannel = NotificationChannel(
+                UpdateCheckJobService.UPDATE_CHANNEL_ID,
+                "App Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications when a new Google Music version is released"
+                setShowBadge(true)
+                enableVibration(true)
+            }
+            notificationManager.createNotificationChannel(updateChannel)
         }
     }
 }

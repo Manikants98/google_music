@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/music_player_controller.dart';
+import '../update/app_update_dialog.dart';
+import '../update/app_update_service.dart';
 import '../../features/player/presentation/now_playing_sheet.dart';
 
 /// Platform channel bridge managing native Android download and playback notification tap routing.
@@ -22,6 +24,8 @@ class DownloadNotificationService {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'openNowPlaying') {
         openNowPlaying();
+      } else if (call.method == 'openAppUpdate') {
+        openAppUpdate();
       }
     });
 
@@ -41,6 +45,8 @@ class DownloadNotificationService {
       final route = await _channel.invokeMethod<String>('getPendingRoute');
       if (route == 'now_playing') {
         openNowPlaying();
+      } else if (route == 'app_update') {
+        openAppUpdate();
       }
     } catch (_) {}
   }
@@ -54,6 +60,21 @@ class DownloadNotificationService {
           final controller = navContext.read<MusicPlayerController>();
           if (controller.currentSong != null) {
             NowPlayingSheet.show(navContext);
+          }
+        } catch (_) {}
+      }
+    });
+  }
+
+  /// Opens the App Update Dialog when an update notification is tapped.
+  static void openAppUpdate() {
+    Future<void>.delayed(const Duration(milliseconds: 350), () async {
+      final navContext = _navKey?.currentContext;
+      if (navContext != null && navContext.mounted) {
+        try {
+          final update = await AppUpdateService.checkForUpdate(includeBeta: true);
+          if (update != null && navContext.mounted) {
+            AppUpdateDialog.show(navContext, update);
           }
         } catch (_) {}
       }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,6 +27,9 @@ class AppUpdateService {
   /// Version tag that user explicitly dismissed with "Later" in the active session.
   static String? _dismissedVersion;
 
+  /// Version tag for which a system update notification has already been dispatched.
+  static String? _lastNotifiedVersion;
+
   /// Marks a version as dismissed for automatic prompts during the active session.
   static void dismissVersion(String version) {
     _dismissedVersion = version;
@@ -35,6 +39,19 @@ class AppUpdateService {
   static const MethodChannel _channel = MethodChannel(
     'com.mkx.google_music/download_notification',
   );
+
+  /// Dispatches a native Android system notification announcing a newly available update.
+  static Future<void> showSystemNotification({
+    required String version,
+    required String title,
+  }) async {
+    try {
+      await _channel.invokeMethod('showUpdateNotification', <String, Object>{
+        'version': version,
+        'title': title,
+      });
+    } catch (_) {}
+  }
 
   /// Retrieves the active version name from Android package manager or cached fallback.
   static Future<String> getAppVersion() async {
@@ -278,6 +295,15 @@ class AppUpdateService {
     if (!context.mounted) return;
 
     if (update != null) {
+      if (_lastNotifiedVersion != update.version) {
+        _lastNotifiedVersion = update.version;
+        unawaited(
+          showSystemNotification(
+            version: update.version,
+            title: update.title,
+          ),
+        );
+      }
       if (!manual && _dismissedVersion == update.version) {
         return;
       }

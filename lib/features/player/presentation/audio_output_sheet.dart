@@ -206,35 +206,6 @@ class AudioOutputSheet extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'To play audio on Bluetooth speakers, TWS earphones, or AirPlay, connect them in your device settings. Google Music will automatically route playback and display the speaker name.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 11.5,
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

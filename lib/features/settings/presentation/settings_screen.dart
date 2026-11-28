@@ -71,9 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         elevation: 8,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         duration: duration,
         content: Row(
           children: <Widget>[
@@ -83,11 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: accent.withValues(alpha: 0.16),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: accent,
-                size: 18,
-              ),
+              child: Icon(icon, color: accent, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -249,7 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsItem(
                 icon: Icons.waves_rounded,
                 title: 'Fluid Animated Background',
-                subtitle: 'Apple Music style flowing liquid mesh in Now Playing',
+                subtitle:
+                    'Flowing organic liquid mesh canvas in Now Playing',
                 trailing: Switch(
                   value: controller.isLiquidMeshEnabled,
                   activeThumbColor: accent,
@@ -270,7 +265,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsItem(
                 icon: Icons.auto_graph_rounded,
                 title: 'Listening Stats',
-                subtitle: 'View your total listening time, top artists & music recap',
+                subtitle:
+                    'View your total listening time, top artists & music recap',
                 trailing: Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
@@ -344,8 +340,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Sleep Timer',
                 subtitle: controller.isSleepTimerActive
                     ? (controller.isSleepTimerEndOfTrack
-                        ? 'Active • Stops at end of track'
-                        : 'Active • Scheduled shutdown')
+                          ? 'Active • Stops at end of track'
+                          : 'Active • Scheduled shutdown')
                     : 'Turn off music automatically when you sleep',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -552,56 +548,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 20),
               child: Center(
-                child: InkWell(
-                  onTap: () => DownloadNotificationService.openUrl(
-                    'https://github.com/Manikants98',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Text(
-                              'Designed & Developed by ',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            'Designed & Developed by ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
                             ),
-                            Text(
-                              'Mani Kant Sharma',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: accent,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Google Music • MKX Edition',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant.withValues(
-                              alpha: 0.7,
-                            ),
-                            fontWeight: FontWeight.w600,
                           ),
+                          Text(
+                            'Mani Kant Sharma',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: accent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Google Music • MKX Edition',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.7,
+                          ),
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 150)),
+          const SliverToBoxAdapter(child: SizedBox(height: 50)),
         ],
       ),
     );
@@ -642,9 +632,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 24 : 12,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 12),
             child: M3EList(
               color: colorScheme.surfaceContainerHighest,
               outerRadius: 12,
