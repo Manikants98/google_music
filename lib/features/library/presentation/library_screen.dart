@@ -980,7 +980,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // ----------------------------------------------------
-  // FEATURED "★ MOST PLAYED" HERO CARD (12dp radius, 6dp inner art)
+  // FEATURED "★ MOST PLAYED" HERO CARD (16dp radius, 10dp inner art)
   // ----------------------------------------------------
   Widget _buildFeaturedMostPlayedCard({
     required BuildContext context,
@@ -1003,7 +1003,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: <Widget>[
@@ -1057,19 +1057,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          // Square Artwork (using standard M3EAlbumArt with 6dp radius)
+          // Square Artwork (proportioned 104dp with 10dp radius for perfect alignment)
           M3EAlbumArt(
             imageUrl: featuredSong.thumbnailUrl,
-            size: 80,
-            radius: 6,
+            size: 104,
+            radius: 10,
             elevation: 1,
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
           // Details & Action Buttons
           Expanded(
@@ -1079,7 +1080,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: <Widget>[
                 // Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(4),
@@ -1087,14 +1088,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: Text(
                     '★ MOST PLAYED',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w800,
                       color: accent,
                       letterSpacing: 0.6,
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   featuredSong.title,
                   maxLines: 1,
@@ -1104,7 +1105,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: 2),
                 Text(
                   featuredSong.artist,
                   maxLines: 1,
@@ -1114,7 +1115,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 9),
                 Row(
                   children: <Widget>[
                     M3EButton(
@@ -1123,19 +1124,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       size: M3EButtonSize.sm,
                       onPressed: () => controller.playSong(featuredSong, newQueue: queueToPlay),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          size: 16,
+                          size: 18,
                           color: colorScheme.onSurface,
                         ),
                         tooltip: 'Shuffle',
