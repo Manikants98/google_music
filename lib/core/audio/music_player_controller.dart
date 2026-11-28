@@ -67,6 +67,9 @@ class MusicPlayerController extends ChangeNotifier {
   /// Currently loaded song track.
   SongModel? _currentSong;
 
+  /// Last saved song track restored from previous session.
+  SongModel? _lastSavedSong;
+
   /// Active track queue.
   List<SongModel> _queue = <SongModel>[];
 
@@ -245,12 +248,73 @@ class MusicPlayerController extends ChangeNotifier {
         _loadSettings(),
       ]);
 
+      if (_currentSong == null) {
+        final songToRestore = _getFallbackRestoreSong();
+        if (songToRestore != null) {
+          _restoreSongState(
+            songToRestore,
+            isPlaying: _player.playing,
+          );
+        }
+      }
+
       behaviorTracker.onDataChanged = _queuePersistBehavior;
       _isUserDataLoaded = true;
       notifyListeners();
     } catch (e) {
       debugPrint('[MusicPlayerController] Initialization error: $e');
     }
+  }
+
+  /// Retrieves the most recent song to restore from settings, history, or active media item.
+  SongModel? _getFallbackRestoreSong() {
+    if (_lastSavedSong != null) return _lastSavedSong;
+    if (_history.isNotEmpty) return _history.first;
+    final item = audioHandler?.mediaItem.value;
+    if (item != null && item.id.isNotEmpty) {
+      return _likedSongs.cast<SongModel?>().firstWhere(
+            (s) => s?.id == item.id,
+            orElse: () => null,
+          ) ??
+          SongModel(
+            id: item.id,
+            title: item.title,
+            artist: item.artist ?? 'Unknown Artist',
+            thumbnailUrl: item.artUri?.toString() ?? '',
+            duration: item.duration != null
+                ? '${item.duration!.inMinutes}:${(item.duration!.inSeconds % 60).toString().padLeft(2, '0')}'
+                : '0:00',
+          );
+    }
+    return null;
+  }
+
+  /// Restores track metadata, queue, and UI player status from previous session.
+  void _restoreSongState(SongModel songToRestore, {bool isPlaying = false}) {
+    _currentSong = songToRestore;
+    _queue = _history.isNotEmpty
+        ? List<SongModel>.from(_history)
+        : <SongModel>[songToRestore];
+    _currentIndex = _queue.indexWhere((s) => s.id == songToRestore.id);
+    if (_currentIndex == -1) _currentIndex = 0;
+    _duration = songToRestore.parsedDuration ?? Duration.zero;
+    _extractDynamicColors(songToRestore.thumbnailUrl);
+    _status = isPlaying ? PlayerStatus.playing : PlayerStatus.paused;
+    if (isPlaying) {
+      _position = _player.position;
+      positionNotifier.value = _player.position;
+      if (_player.duration != null && _player.duration! > Duration.zero) {
+        _duration = _player.duration!;
+      }
+    }
+    audioHandler?.setTrackMetadata(
+      id: songToRestore.id,
+      title: songToRestore.title,
+      artist: songToRestore.artist,
+      artUri: songToRestore.thumbnailUrl,
+      duration: _duration > Duration.zero ? _duration : null,
+    );
+    _syncAudioNotification();
   }
 
   /// Current song track.
@@ -481,6 +545,14 @@ class MusicPlayerController extends ChangeNotifier {
   /// Listens to internal player stream updates.
   void _initPlayerListeners() {
     _playerSubscription = _player.playerStateStream.listen((state) {
+      if (_currentSong == null && state.playing) {
+        final song = _getFallbackRestoreSong();
+        if (song != null) {
+          _restoreSongState(song, isPlaying: true);
+          notifyListeners();
+        }
+      }
+
       if (_status == PlayerStatus.loading) {
         if (state.processingState == ja.ProcessingState.ready) {
           _status = state.playing ? PlayerStatus.playing : PlayerStatus.paused;
@@ -492,7 +564,11 @@ class MusicPlayerController extends ChangeNotifier {
 
       switch (state.processingState) {
         case ja.ProcessingState.idle:
-          _status = PlayerStatus.idle;
+          if (_currentSong != null) {
+            _status = PlayerStatus.paused;
+          } else {
+            _status = PlayerStatus.idle;
+          }
           break;
         case ja.ProcessingState.loading:
         case ja.ProcessingState.buffering:
@@ -560,11 +636,18 @@ class MusicPlayerController extends ChangeNotifier {
     });
 
     _playingSubscription = _player.playingStream.listen((playing) {
+      if (_currentSong == null && playing) {
+        final song = _getFallbackRestoreSong();
+        if (song != null) {
+          _restoreSongState(song, isPlaying: true);
+          notifyListeners();
+        }
+      }
       if (!playing && _status == PlayerStatus.playing) {
         _status = PlayerStatus.paused;
         _syncAudioNotification();
         notifyListeners();
-      } else if (playing && _status == PlayerStatus.paused) {
+      } else if (playing && _status != PlayerStatus.playing) {
         _status = PlayerStatus.playing;
         _syncAudioNotification();
         notifyListeners();
@@ -704,6 +787,7 @@ class MusicPlayerController extends ChangeNotifier {
 
     song.isLiked = isSongLiked(song.id);
     _currentSong = song;
+    unawaited(_persistSettings());
     _history.removeWhere((s) => s.id == song.id);
     _history.insert(0, song);
     if (_history.length > 150) {
@@ -848,7 +932,11 @@ class MusicPlayerController extends ChangeNotifier {
     if (_status == PlayerStatus.playing) {
       await pause();
     } else if (_status == PlayerStatus.paused) {
-      await resume();
+      if (_player.audioSource == null && _currentSong != null) {
+        await playSong(_currentSong!);
+      } else {
+        await resume();
+      }
     } else if (_currentSong != null) {
       await playSong(_currentSong!);
     }
@@ -856,6 +944,10 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Resumes playback.
   Future<void> resume() async {
+    if (_player.audioSource == null && _currentSong != null) {
+      await playSong(_currentSong!);
+      return;
+    }
     await _player.play();
     _status = PlayerStatus.playing;
     _syncAudioNotification();
@@ -867,6 +959,7 @@ class MusicPlayerController extends ChangeNotifier {
     await _player.pause();
     _status = PlayerStatus.paused;
     _syncAudioNotification();
+    unawaited(_persistSettings());
     notifyListeners();
   }
 
@@ -1574,6 +1667,12 @@ class MusicPlayerController extends ChangeNotifier {
         if (beta != null) {
           _isBetaChannelEnabled = beta;
         }
+        final lastSongMap = decoded['lastPlayedSong'] as Map<String, dynamic>?;
+        if (lastSongMap != null) {
+          final s = SongModel.fromMap(lastSongMap);
+          s.isLiked = isSongLiked(s.id);
+          _lastSavedSong = s;
+        }
       }
     } catch (e) {
       debugPrint('[MusicPlayerController] Error loading settings: $e');
@@ -1589,6 +1688,7 @@ class MusicPlayerController extends ChangeNotifier {
       'isAutoplayEnabled': _isAutoplayEnabled,
       'isDeveloperModeEnabled': _isDeveloperModeEnabled,
       'isBetaChannelEnabled': _isBetaChannelEnabled,
+      if (_currentSong != null) 'lastPlayedSong': _currentSong!.toMap(),
     };
     await _writeJsonAtomically(file, data);
   }
