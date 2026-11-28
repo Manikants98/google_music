@@ -160,7 +160,7 @@ flutter build macos --release
 MACOS_APP_PATH="build/macos/Build/Products/Release/Google Music.app"
 if [ -d "$MACOS_APP_PATH" ]; then
   rm -f "$DMG_OUTPUT" ./google_music.dmg
-  hdiutil create -volname "Google Music" -srcfolder "$MACOS_APP_PATH" -ov -format UDZO "$DMG_OUTPUT" > /dev/null
+  hdiutil create -volname "Google Music" -srcfolder "$MACOS_APP_PATH" -ov -format UDZO "$DMG_OUTPUT" > /dev/null 2>&1
   DMG_SIZE=$(ls -lh "$DMG_OUTPUT" | awk '{print $5}')
   echo -e "${GREEN}✓ macOS DMG packaged successfully: ${BOLD}${DMG_OUTPUT}${RESET} (${DMG_SIZE})\n"
 else
