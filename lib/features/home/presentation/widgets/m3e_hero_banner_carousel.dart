@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
@@ -47,42 +45,17 @@ class M3EHeroBannerCarousel extends StatefulWidget {
 
 class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
   late final M3ECarouselController _controller;
-  Timer? _autoScrollTimer;
 
   @override
   void initState() {
     super.initState();
     _controller = M3ECarouselController();
-    _startAutoScroll();
   }
 
   @override
   void dispose() {
-    _stopAutoScroll();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _startAutoScroll() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (!mounted || widget.songs.isEmpty) return;
-      if (_controller.hasClients) {
-        final total = widget.songs.take(10).length;
-        if (total <= 1) return;
-        final nextItem = (_controller.currentItem + 1) % total;
-        _controller.animateToItem(
-          nextItem,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.fastEaseInToSlowEaseOut,
-        );
-      }
-    });
-  }
-
-  void _stopAutoScroll() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = null;
   }
 
   @override
@@ -94,61 +67,21 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
     final isDesktop = MediaQuery.sizeOf(context).width > 850;
     final accent = colorScheme.primary;
 
-    // Take top 8-10 hits for the expressive hero carousel
     final displaySongs = widget.songs.take(10).toList();
     final double carouselHeight = isDesktop ? 350 : 315;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              isDesktop ? 24 : 12,
-              8,
-              isDesktop ? 24 : 12,
-              12,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'FEATURED',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Quick picks',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            height: carouselHeight,
-            child: M3ECarousel(
-              controller: _controller,
-              type: M3ECarouselType.hero,
-              axis: Axis.horizontal,
-              heroAlignment: M3ECarouselHeroAlignment.center,
-              freeScroll: false,
-              showAll: true,
-              children: displaySongs.map((song) {
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: SizedBox(
+        height: carouselHeight,
+        child: M3ECarousel(
+          controller: _controller,
+          type: M3ECarouselType.hero,
+          axis: Axis.horizontal,
+          heroAlignment: M3ECarouselHeroAlignment.center,
+          freeScroll: false,
+          showAll: false,
+          children: displaySongs.map((song) {
                 final isCurrentActiveTrack =
                     widget.currentPlayingSong?.id == song.id;
                 final isCurrentPlaying =
@@ -163,26 +96,29 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
                         fit: BoxFit.cover,
                         placeholder: (BuildContext context, String url) =>
                             Container(
-                          color: colorScheme.surfaceContainerHighest,
-                          child: const Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                              color: colorScheme.surfaceContainerHighest,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        errorWidget: (BuildContext context, String url, Object error) =>
-                            Container(
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              Icons.music_note_rounded,
-                              size: 48,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
+                        errorWidget:
+                            (BuildContext context, String url, Object error) =>
+                                Container(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.music_note_rounded,
+                                      size: 48,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
                       ),
                       // Floating circular Play Button (ArchiveTune style)
                       Positioned(
@@ -301,8 +237,6 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
               }).toList(),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
+        );
+      }
+    }
