@@ -6,23 +6,9 @@ import '../../../core/audio/music_player_controller.dart';
 import '../../../core/widgets/m3e_widgets.dart';
 
 /// Screen presenting user's personal listening statistics, analytics, and music insights.
-class StatsScreen extends StatefulWidget {
+class StatsScreen extends StatelessWidget {
   /// Creates stats screen.
   const StatsScreen({super.key});
-
-  @override
-  State<StatsScreen> createState() => _StatsScreenState();
-}
-
-class _StatsScreenState extends State<StatsScreen> {
-  String _selectedRange = 'Years';
-
-  final List<String> _ranges = const <String>[
-    'Continuous',
-    'Weeks',
-    'Months',
-    'Years',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +29,8 @@ class _StatsScreenState extends State<StatsScreen> {
     final formattedTime = durationHours > 0
         ? '${durationHours}h ${durationRemainingMins}m'
         : '$totalMinutes mins';
-    final clockFormatted = '${(totalMinutes).toString().padLeft(2, '0')}:${(totalListenSeconds % 60).toString().padLeft(2, '0')}';
+    final clockFormatted =
+        '${(totalMinutes).toString().padLeft(2, '0')}:${(totalListenSeconds % 60).toString().padLeft(2, '0')}';
 
     final totalPlays = tracker.totalPlays;
     final uniqueSongs = tracker.uniqueSongsCount;
@@ -53,147 +40,31 @@ class _StatsScreenState extends State<StatsScreen> {
     final favArtist = tracker.getFavoriteArtistDetails();
     final topSongs = tracker.getMostPlayedSongs(
       limit: 5,
-      fallbackTracks: controller.likedSongs.isNotEmpty ? controller.likedSongs : controller.history,
+      fallbackTracks: controller.likedSongs.isNotEmpty
+          ? controller.likedSongs
+          : controller.history,
     );
     final topArtists = tracker.getTopArtists(limit: 5);
     final langAffinities = tracker.languageAffinities.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final currentYear = DateTime.now().year;
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
-        titleSpacing: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          color: colorScheme.onSurface,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              'Stats',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              '$_selectedRange • $currentYear',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.auto_awesome_rounded, color: accent),
-            tooltip: 'Music Recap',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Listening Stats: $totalMinutes minutes listened across $totalPlays plays!',
-                  ),
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
-            },
+        title: Text(
+          'Stats',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
           ),
-          SizedBox(width: isDesktop ? 18 : 6),
-        ],
+        ),
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 8),
         children: <Widget>[
           // ----------------------------------------------------
-          // 1. TIME RANGE CARD
-          // ----------------------------------------------------
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 16,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Time range',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 36,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _ranges.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final range = _ranges[index];
-                      final isSelected = range == _selectedRange;
-                      return M3EChip(
-                        label: range,
-                        type: M3EChipType.filter,
-                        selected: isSelected,
-                        onPressed: () {
-                          setState(() {
-                            _selectedRange = range;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _selectedRange == 'Years' ? '$currentYear' : _selectedRange,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ----------------------------------------------------
-          // 2. HERO CARD: TOTAL TIME LISTENED
+          // 1. HERO CARD: TOTAL TIME LISTENED
           // ----------------------------------------------------
           Container(
             padding: const EdgeInsets.all(18),
@@ -219,22 +90,6 @@ class _StatsScreenState extends State<StatsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _selectedRange == 'Years' ? '$currentYear' : _selectedRange,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     Row(
                       children: <Widget>[
                         Icon(
@@ -282,7 +137,7 @@ class _StatsScreenState extends State<StatsScreen> {
           const SizedBox(height: 10),
 
           // ----------------------------------------------------
-          // 3. 2x2 METRICS BENTO GRID
+          // 2. 2x2 METRICS BENTO GRID
           // ----------------------------------------------------
           Row(
             children: <Widget>[
@@ -341,7 +196,7 @@ class _StatsScreenState extends State<StatsScreen> {
           const SizedBox(height: 12),
 
           // ----------------------------------------------------
-          // 4. YOUR FAVOURITE ARTIST CARD
+          // 3. YOUR FAVOURITE ARTIST CARD
           // ----------------------------------------------------
           if (favArtist != null) ...<Widget>[
             Container(
@@ -416,7 +271,10 @@ class _StatsScreenState extends State<StatsScreen> {
                         Row(
                           children: <Widget>[
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: accent.withValues(alpha: 0.16),
                                 borderRadius: BorderRadius.circular(6),
@@ -424,7 +282,8 @@ class _StatsScreenState extends State<StatsScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
-                                  Icon(Icons.play_arrow_rounded, size: 14, color: accent),
+                                  Icon(Icons.play_arrow_rounded,
+                                      size: 14, color: accent),
                                   const SizedBox(width: 2),
                                   Text(
                                     '${favArtist.playCount} times',
@@ -440,7 +299,10 @@ class _StatsScreenState extends State<StatsScreen> {
                             const SizedBox(width: 8),
                             if (favArtist.dwellSeconds > 0)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surfaceContainerHigh,
                                   borderRadius: BorderRadius.circular(6),
@@ -477,7 +339,7 @@ class _StatsScreenState extends State<StatsScreen> {
           ],
 
           // ----------------------------------------------------
-          // 5. TOP 5 MOST PLAYED SONGS
+          // 4. TOP 5 MOST PLAYED SONGS
           // ----------------------------------------------------
           if (topSongs.isNotEmpty) ...<Widget>[
             Padding(
@@ -505,7 +367,8 @@ class _StatsScreenState extends State<StatsScreen> {
                 final song = topSongs[index];
                 final plays = tracker.getPlayCount(song.id);
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   child: Row(
                     children: <Widget>[
                       // Rank number
@@ -516,7 +379,9 @@ class _StatsScreenState extends State<StatsScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: index == 0 ? accent : colorScheme.onSurfaceVariant,
+                            color: index == 0
+                                ? accent
+                                : colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -558,7 +423,8 @@ class _StatsScreenState extends State<StatsScreen> {
                       ),
                       if (plays > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: accent.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
@@ -581,7 +447,7 @@ class _StatsScreenState extends State<StatsScreen> {
           ],
 
           // ----------------------------------------------------
-          // 6. TOP ARTISTS LIST
+          // 5. TOP ARTISTS LIST
           // ----------------------------------------------------
           if (topArtists.isNotEmpty) ...<Widget>[
             Padding(
@@ -605,7 +471,8 @@ class _StatsScreenState extends State<StatsScreen> {
               itemBuilder: (BuildContext context, int index) {
                 final artist = topArtists[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   child: Row(
                     children: <Widget>[
                       // Rank number
@@ -616,7 +483,9 @@ class _StatsScreenState extends State<StatsScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: index == 0 ? accent : colorScheme.onSurfaceVariant,
+                            color: index == 0
+                                ? accent
+                                : colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -660,7 +529,8 @@ class _StatsScreenState extends State<StatsScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(6),
@@ -683,7 +553,7 @@ class _StatsScreenState extends State<StatsScreen> {
           ],
 
           // ----------------------------------------------------
-          // 7. LANGUAGE & GENRE VIBES
+          // 6. LANGUAGE & GENRE VIBES
           // ----------------------------------------------------
           if (langAffinities.isNotEmpty) ...<Widget>[
             Padding(
@@ -708,9 +578,11 @@ class _StatsScreenState extends State<StatsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: langAffinities.map((entry) {
-                  final capitalized = entry.key[0].toUpperCase() + entry.key.substring(1);
+                  final capitalized =
+                      entry.key[0].toUpperCase() + entry.key.substring(1);
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
