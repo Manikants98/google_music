@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -250,12 +251,13 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                       ],
                     ),
                   ),
-                  IconButton(
+                  M3EIconButton(
+                    variant: M3EIconButtonVariant.standard,
+                    haptic: M3EHapticFeedback.light,
                     icon: const Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 28,
                     ),
-                    color: colorScheme.onSurfaceVariant,
                     tooltip: 'Close',
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -319,44 +321,6 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
 
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                'Playing Queue',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(
-                    controller.isPlaylistQueue
-                        ? Icons.playlist_play_rounded
-                        : Icons.graphic_eq_rounded,
-                    size: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    controller.isPlaylistQueue
-                        ? 'Playlist songs'
-                        : 'Similar songs',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
         Expanded(
           child: ReorderableListView.builder(
             scrollController: _queueScrollController,
@@ -619,10 +583,7 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
             ),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                line.text,
-                textAlign: TextAlign.left,
-              ),
+              child: Text(line.text, textAlign: TextAlign.left),
             ),
           ),
         ),
@@ -784,9 +745,11 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          for (int index = 0;
-                              index < lyrics.syncedLines.length;
-                              index++)
+                          for (
+                            int index = 0;
+                            index < lyrics.syncedLines.length;
+                            index++
+                          )
                             _buildSyncedLineItem(
                               context,
                               controller,
@@ -945,21 +908,6 @@ class _QueueBottomSheetState extends State<QueueBottomSheet> {
           children: <Widget>[
             /// Section 1: You Might Also Like (YouTube algorithm recommendations).
             if (recommendations.isNotEmpty) ...<Widget>[
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 10),
-                child: Row(
-                  children: <Widget>[
-                    Text(
-                      'You might also like',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               ...recommendations.take(6).map((recSong) {
                 return _buildRelatedSongTile(
                   recSong,
