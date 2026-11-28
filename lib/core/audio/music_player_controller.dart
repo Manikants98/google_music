@@ -1430,10 +1430,10 @@ class MusicPlayerController extends ChangeNotifier {
       }
 
       addValidColor(palette.vibrantColor?.color);
-      addValidColor(palette.lightVibrantColor?.color);
       addValidColor(palette.darkVibrantColor?.color);
       addValidColor(palette.dominantColor?.color);
       addValidColor(palette.mutedColor?.color);
+      addValidColor(palette.lightVibrantColor?.color);
       addValidColor(palette.lightMutedColor?.color);
 
       _dynamicAccentColor = vibrantAccent;

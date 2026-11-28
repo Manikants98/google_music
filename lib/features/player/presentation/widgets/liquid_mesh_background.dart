@@ -119,6 +119,23 @@ class _LiquidMeshBackgroundState extends State<LiquidMeshBackground>
     super.dispose();
   }
 
+  /// Clamps and calibrates color values to guarantee moody darkish tones in Dark Mode,
+  /// and soft pastel airy tones in Light Mode.
+  Color _tuneColorForTheme(Color color, bool isDark) {
+    final hsl = HSLColor.fromColor(color);
+    if (isDark) {
+      // Dark mode: moody, deep, rich tones (avoids pale yellow / white glaring spots)
+      final l = hsl.lightness.clamp(0.16, 0.28);
+      final s = (hsl.saturation * 1.15).clamp(0.50, 0.88);
+      return hsl.withLightness(l).withSaturation(s).toColor();
+    } else {
+      // Light mode: soft, luminous, delicate pastel watercolor tones
+      final l = hsl.lightness.clamp(0.76, 0.90);
+      final s = (hsl.saturation * 0.70).clamp(0.20, 0.50);
+      return hsl.withLightness(l).withSaturation(s).toColor();
+    }
+  }
+
   /// Synthesizes 4 rich, expressive harmonious orb colors from active artwork tones.
   List<Color> _generateHarmonicPalette(
     Color primary,
@@ -143,22 +160,24 @@ class _LiquidMeshBackgroundState extends State<LiquidMeshBackground>
 
       // Analogous shift +38 degrees
       final hue2 = (hsl.hue + 38.0) % 360.0;
-      c2 = hsl.withHue(hue2).withLightness(isDark ? 0.48 : 0.62).toColor();
+      c2 = hsl.withHue(hue2).toColor();
 
       // Complementary/triadic shift -42 degrees
       final hue3 = (hsl.hue - 42.0 + 360.0) % 360.0;
-      c3 = hsl.withHue(hue3).withLightness(isDark ? 0.38 : 0.55).toColor();
+      c3 = hsl.withHue(hue3).toColor();
 
       // Atmospheric deep accent
       final hue4 = (hsl.hue + 120.0) % 360.0;
-      c4 = hsl
-          .withHue(hue4)
-          .withSaturation((hsl.saturation * 0.8).clamp(0.4, 0.9))
-          .withLightness(isDark ? 0.30 : 0.65)
-          .toColor();
+      c4 = hsl.withHue(hue4).toColor();
     }
 
-    return <Color>[c1, c2, c3, c4];
+    // Calibrate all 4 orb colors for active mode (darkish for dark mode, light pastel for light mode)
+    return <Color>[
+      _tuneColorForTheme(c1, isDark),
+      _tuneColorForTheme(c2, isDark),
+      _tuneColorForTheme(c3, isDark),
+      _tuneColorForTheme(c4, isDark),
+    ];
   }
 
   List<Color> _getCurrentInterpolatedColors() {
@@ -176,8 +195,8 @@ class _LiquidMeshBackgroundState extends State<LiquidMeshBackground>
   @override
   Widget build(BuildContext context) {
     final Color canvasBaseColor = widget.isDark
-        ? const Color(0xFF0C0D12)
-        : const Color(0xFFF2F4F8);
+        ? const Color(0xFF090A0E)
+        : const Color(0xFFF6F7FA);
 
     return RepaintBoundary(
       child: Stack(
@@ -221,18 +240,18 @@ class _LiquidMeshBackgroundState extends State<LiquidMeshBackground>
                 end: Alignment.bottomCenter,
                 colors: widget.isDark
                     ? <Color>[
-                        Colors.black.withValues(alpha: 0.38),
+                        Colors.black.withValues(alpha: 0.45),
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.30),
-                        Colors.black.withValues(alpha: 0.65),
+                        Colors.black.withValues(alpha: 0.35),
+                        Colors.black.withValues(alpha: 0.72),
                       ]
                     : <Color>[
-                        Colors.white.withValues(alpha: 0.40),
+                        Colors.white.withValues(alpha: 0.35),
                         Colors.transparent,
-                        Colors.white.withValues(alpha: 0.25),
-                        Colors.white.withValues(alpha: 0.55),
+                        Colors.white.withValues(alpha: 0.20),
+                        Colors.white.withValues(alpha: 0.50),
                       ],
-                stops: const <double>[0.0, 0.35, 0.70, 1.0],
+                stops: const <double>[0.0, 0.35, 0.68, 1.0],
               ),
             ),
           ),
@@ -264,8 +283,8 @@ class _LiquidMeshPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    final alphaCore = isDark ? 0.75 : 0.60;
-    final alphaMid = isDark ? 0.38 : 0.28;
+    final alphaCore = isDark ? 0.62 : 0.45;
+    final alphaMid = isDark ? 0.26 : 0.18;
 
     // --- ORB 1: Primary Accent (Top-Left / Center Drift) ---
     final x1 = w * (0.32 + 0.22 * math.sin(time * 0.42 + 0.4));
@@ -314,7 +333,7 @@ class _LiquidMeshPainter extends CustomPainter {
     final rect = Rect.fromCircle(center: center, radius: radius);
     final paint = Paint()
       ..shader = gradient.createShader(rect)
-      ..blendMode = isDark ? BlendMode.screen : BlendMode.multiply;
+      ..blendMode = isDark ? BlendMode.screen : BlendMode.srcOver;
 
     canvas.drawCircle(center, radius, paint);
   }
