@@ -58,20 +58,30 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
     final double carouselHeight = isDesktop ? 240 : 210;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 6),
+      padding: const EdgeInsets.only(top: 8),
       child: SizedBox(
         height: carouselHeight,
-        child: M3ECarousel(
-          controller: _controller,
-          type: M3ECarouselType.hero,
-          axis: Axis.horizontal,
-          heroAlignment: M3ECarouselHeroAlignment.center,
-          freeScroll: false,
-          showAll: false,
-          haptic: M3EHapticFeedback.light,
-          childElementBorderRadius: 24,
-          scrollAnimationDuration: 400,
-          children: displaySongs.map((song) {
+        child: M3ETheme(
+          data: M3ETheme.of(context).copyWith(
+            carouselTheme: M3ETheme.of(context).carouselTheme.copyWith(
+                  smallMinWidth: 12,
+                  smallMaxWidth: 18,
+                  itemGap: 6,
+                  itemPadding: const EdgeInsets.symmetric(horizontal: 3),
+                ),
+          ),
+          child: M3ECarousel(
+            controller: _controller,
+            type: M3ECarouselType.hero,
+            axis: Axis.horizontal,
+            heroAlignment: M3ECarouselHeroAlignment.center,
+            largeMaxWidth: isDesktop ? 900 : 700,
+            freeScroll: false,
+            showAll: false,
+            haptic: M3EHapticFeedback.light,
+            childElementBorderRadius: 24,
+            scrollAnimationDuration: 400,
+            children: displaySongs.map((song) {
             final isCurrentActiveTrack =
                 widget.currentPlayingSong?.id == song.id;
             final isCurrentPlaying = isCurrentActiveTrack && widget.isPlaying;
@@ -225,6 +235,7 @@ class _M3EHeroBannerCarouselState extends State<M3EHeroBannerCarousel> {
           }).toList(),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

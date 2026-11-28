@@ -109,6 +109,24 @@ class AudioRouteService {
     }
   }
 
+  /// Cleans raw device names reported by the OS / ALSA driver.
+  /// E.g. strips redundant driver prefixes like "USB-Audio - " or "USB - ".
+  static String cleanDeviceName(
+    String? rawName, {
+    String defaultFallback = 'Audio Device',
+  }) {
+    if (rawName == null) return defaultFallback;
+    var name = rawName.trim();
+    if (name.isEmpty) return defaultFallback;
+
+    name = name.replaceFirst(
+      RegExp(r'^(USB-Audio|USB\s*Audio|USB)\s*-\s*', caseSensitive: false),
+      '',
+    ).trim();
+
+    return name.isEmpty ? defaultFallback : name;
+  }
+
   /// Evaluates and selects the primary active output device based on OS routing priority.
   static AudioRouteInfo resolveActiveRoute(Set<AudioDevice> devices) {
     final outputs = devices.where((d) => d.isOutput).toList();
@@ -123,7 +141,7 @@ class AudioRouteService {
           d.type == AudioDeviceType.bluetoothSco) {
         return AudioRouteInfo(
           id: d.id,
-          name: d.name.trim().isNotEmpty ? d.name.trim() : 'Bluetooth Speaker',
+          name: cleanDeviceName(d.name, defaultFallback: 'Bluetooth Speaker'),
           type: AudioRouteType.bluetooth,
           icon: Icons.bluetooth_audio_rounded,
         );
@@ -135,7 +153,7 @@ class AudioRouteService {
       if (d.type == AudioDeviceType.airPlay) {
         return AudioRouteInfo(
           id: d.id,
-          name: d.name.trim().isNotEmpty ? d.name.trim() : 'AirPlay Speaker',
+          name: cleanDeviceName(d.name, defaultFallback: 'AirPlay Speaker'),
           type: AudioRouteType.airPlay,
           icon: Icons.airplay_rounded,
         );
@@ -148,7 +166,7 @@ class AudioRouteService {
           d.type == AudioDeviceType.wiredHeadset) {
         return AudioRouteInfo(
           id: d.id,
-          name: d.name.trim().isNotEmpty ? d.name.trim() : 'Wired Headphones',
+          name: cleanDeviceName(d.name, defaultFallback: 'Wired Headphones'),
           type: AudioRouteType.wired,
           icon: Icons.headphones_rounded,
         );
@@ -160,7 +178,7 @@ class AudioRouteService {
       if (d.type == AudioDeviceType.usbAudio) {
         return AudioRouteInfo(
           id: d.id,
-          name: d.name.trim().isNotEmpty ? d.name.trim() : 'USB Audio Device',
+          name: cleanDeviceName(d.name, defaultFallback: 'USB Audio Device'),
           type: AudioRouteType.usb,
           icon: Icons.usb_rounded,
         );
@@ -181,7 +199,7 @@ class AudioRouteService {
 
         return AudioRouteInfo(
           id: d.id,
-          name: d.name.trim().isNotEmpty ? d.name.trim() : platformLabel,
+          name: cleanDeviceName(d.name, defaultFallback: platformLabel),
           type: AudioRouteType.speaker,
           icon: Icons.speaker_rounded,
           isDefaultSpeaker: true,
@@ -193,7 +211,7 @@ class AudioRouteService {
     final first = outputs.first;
     return AudioRouteInfo(
       id: first.id,
-      name: first.name.trim().isNotEmpty ? first.name.trim() : 'Audio Output',
+      name: cleanDeviceName(first.name, defaultFallback: 'Audio Output'),
       type: AudioRouteType.other,
       icon: Icons.volume_up_rounded,
     );
@@ -239,7 +257,7 @@ class AudioRouteService {
 
       return AudioRouteInfo(
         id: d.id,
-        name: d.name.trim().isNotEmpty ? d.name.trim() : 'Audio Device',
+        name: cleanDeviceName(d.name, defaultFallback: 'Audio Device'),
         type: kind,
         icon: icon,
         isDefaultSpeaker: isSpk,
