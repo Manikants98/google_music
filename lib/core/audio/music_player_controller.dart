@@ -112,6 +112,12 @@ class MusicPlayerController extends ChangeNotifier {
   /// Storage file handle for persisting listening history.
   File? _historyFile;
 
+  /// Recent search history tracks.
+  final List<SongModel> _recentSearches = <SongModel>[];
+
+  /// Storage file handle for persisting recent search history.
+  File? _recentSearchesFile;
+
   /// Storage file handle for persisting behavioral analytics.
   File? _behaviorFile;
 
@@ -242,12 +248,14 @@ class MusicPlayerController extends ChangeNotifier {
       final docDir = await getApplicationDocumentsDirectory();
       _likedSongsFile = File('${docDir.path}/liked_songs.json');
       _historyFile = File('${docDir.path}/playback_history.json');
+      _recentSearchesFile = File('${docDir.path}/recent_searches.json');
       _behaviorFile = File('${docDir.path}/user_behavior.json');
       _settingsFile = File('${docDir.path}/app_settings.json');
 
       await Future.wait<void>(<Future<void>>[
         _loadLikedSongs(),
         _loadHistory(),
+        _loadRecentSearches(),
         _loadBehavior(),
         _loadSettings(),
       ]);
@@ -470,6 +478,10 @@ class MusicPlayerController extends ChangeNotifier {
 
   /// Playback history.
   List<SongModel> get history => List<SongModel>.unmodifiable(_history);
+
+  /// Recent search history tracks.
+  List<SongModel> get recentSearches =>
+      List<SongModel>.unmodifiable(_recentSearches);
 
   /// Returns the user's most played songs for Speed Dials.
   List<SongModel> getSpeedDialSongs({
@@ -1653,6 +1665,87 @@ class MusicPlayerController extends ChangeNotifier {
     if (file == null) return;
     final list = _history.take(150).map((SongModel s) => s.toMap()).toList();
     await _writeJsonAtomically(file, list);
+  }
+
+  /// Loads persisted search history from disk.
+  Future<void> _loadRecentSearches() async {
+    final file = _recentSearchesFile;
+    if (file == null || !await file.exists()) return;
+
+    try {
+      final raw = await file.readAsString();
+      if (raw.trim().isEmpty) return;
+
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is List) {
+        _recentSearches.clear();
+        for (final item in decoded) {
+          if (item is Map<String, dynamic>) {
+            final song = SongModel.fromMap(item);
+            song.isLiked = isSongLiked(song.id);
+            _recentSearches.add(song);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[MusicPlayerController] Error loading recent searches: $e');
+    }
+  }
+
+  /// Persists recent search tracks to disk.
+  Future<void> _persistRecentSearches() async {
+    final file = _recentSearchesFile;
+    if (file == null) return;
+    final list =
+        _recentSearches.take(30).map((SongModel s) => s.toMap()).toList();
+    await _writeJsonAtomically(file, list);
+  }
+
+  /// Adds a song to recent search history.
+  void addToRecentSearches(SongModel song) {
+    _recentSearches.removeWhere((s) => s.id == song.id);
+    _recentSearches.insert(0, song);
+    if (_recentSearches.length > 30) {
+      _recentSearches.removeRange(30, _recentSearches.length);
+    }
+    unawaited(_persistRecentSearches());
+    notifyListeners();
+  }
+
+  /// Removes a song from recent search history.
+  void removeFromRecentSearches(String songId) {
+    _recentSearches.removeWhere((s) => s.id == songId);
+    unawaited(_persistRecentSearches());
+    notifyListeners();
+  }
+
+  /// Clears all recent searches.
+  void clearRecentSearches() {
+    _recentSearches.clear();
+    unawaited(_persistRecentSearches());
+    notifyListeners();
+  }
+
+  /// Plays a song selected from search results.
+  /// Starts fresh queue with [song], adds it to recent searches, and triggers
+  /// YouTube Music watch-next recommendations so next tracks match this song.
+  Future<void> playSongFromSearch(SongModel song) async {
+    addToRecentSearches(song);
+    await playSong(song, newQueue: <SongModel>[song], isPlaylistQueue: false);
+    unawaited(ensureAutoplayQueue(force: true));
+  }
+
+  /// Imports a remote YouTube Music playlist into the user's custom playlists.
+  Future<PlaylistModel?> importRemotePlaylist(PlaylistModel playlist) async {
+    final service = playlistService;
+    final created = await service.importPlaylist(
+      name: playlist.name,
+      songs: playlist.songs,
+      author: playlist.author,
+      customThumbnailUrl: playlist.thumbnailUrl,
+    );
+    notifyListeners();
+    return created;
   }
 
   /// Loads persisted behavior analytics from disk.

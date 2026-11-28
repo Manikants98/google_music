@@ -55,6 +55,29 @@ class PlaylistService extends ChangeNotifier {
     return newPlaylist;
   }
 
+  /// Imports an entire remote playlist into the user's custom playlists.
+  Future<PlaylistModel> importPlaylist({
+    required String name,
+    required List<SongModel> songs,
+    String? author,
+    String? customThumbnailUrl,
+  }) async {
+    final trimmedName = name.trim().isEmpty ? 'Imported Playlist' : name.trim();
+    final newPlaylist = PlaylistModel(
+      id: 'pl_${DateTime.now().millisecondsSinceEpoch}',
+      name: trimmedName,
+      author: author,
+      customThumbnailUrl: customThumbnailUrl,
+      createdAt: DateTime.now(),
+      songs: List<SongModel>.from(songs),
+    );
+
+    _playlists.insert(0, newPlaylist);
+    await _persist();
+    notifyListeners();
+    return newPlaylist;
+  }
+
   /// Deletes a playlist by its [id].
   Future<bool> deletePlaylist(String id) async {
     final index = _playlists.indexWhere((PlaylistModel p) => p.id == id);

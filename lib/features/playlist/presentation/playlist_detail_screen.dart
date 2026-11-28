@@ -8,14 +8,77 @@ import '../../../core/widgets/track_tile.dart';
 import '../../../models/playlist_model.dart';
 import '../../../models/song_model.dart';
 import '../../player/presentation/now_playing_sheet.dart';
+import 'add_to_playlist_sheet.dart';
 
-/// Detailed view for a custom user playlist displaying tracks, playback actions, and management controls.
-class PlaylistDetailScreen extends StatelessWidget {
-  /// The ID of the playlist to display.
+/// Detailed view for a custom user playlist or remote YouTube Music playlist
+/// displaying tracks, playback actions, and management / import controls.
+class PlaylistDetailScreen extends StatefulWidget {
+  /// The ID of the playlist to display (local 'pl_...' or remote 'VL...').
   final String playlistId;
 
+  /// Optional initial playlist metadata if navigated from search or discovery.
+  final PlaylistModel? initialPlaylist;
+
   /// Creates a playlist detail screen.
-  const PlaylistDetailScreen({super.key, required this.playlistId});
+  const PlaylistDetailScreen({
+    super.key,
+    required this.playlistId,
+    this.initialPlaylist,
+  });
+
+  @override
+  State<PlaylistDetailScreen> createState() => _PlaylistDetailScreenState();
+}
+
+class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
+  PlaylistModel? _remotePlaylist;
+  bool _isLoadingRemote = false;
+  String? _remoteError;
+
+  @override
+  void initState() {
+    super.initState();
+    _remotePlaylist = widget.initialPlaylist;
+    _checkAndFetchRemote();
+  }
+
+  Future<void> _checkAndFetchRemote() async {
+    final controller = context.read<MusicPlayerController>();
+    final isLocal = controller.playlists.any((p) => p.id == widget.playlistId);
+
+    // If it's a remote playlist or needs track population
+    if (!isLocal || (_remotePlaylist != null && _remotePlaylist!.songs.isEmpty)) {
+      if (mounted) {
+        setState(() {
+          _isLoadingRemote = true;
+          _remoteError = null;
+        });
+      }
+
+      try {
+        final fetched = await controller.innerTubeClient.getPlaylistDetails(
+          widget.playlistId,
+        );
+        if (mounted) {
+          setState(() {
+            if (fetched != null) {
+              _remotePlaylist = fetched;
+            } else if (_remotePlaylist == null) {
+              _remoteError = 'Could not load playlist tracks';
+            }
+            _isLoadingRemote = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _remoteError = 'Failed to load playlist: $e';
+            _isLoadingRemote = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,20 +87,71 @@ class PlaylistDetailScreen extends StatelessWidget {
     final controller = context.watch<MusicPlayerController>();
     final accent = controller.dynamicAccentColor;
 
-    final playlist = controller.playlists.cast<PlaylistModel?>().firstWhere(
-      (PlaylistModel? p) => p?.id == playlistId,
-      orElse: () => null,
-    );
+    // Check local playlists first
+    final localPlaylist = controller.playlists.cast<PlaylistModel?>().firstWhere(
+          (PlaylistModel? p) => p?.id == widget.playlistId,
+          orElse: () => null,
+        );
+
+    final isLocal = localPlaylist != null;
+    final playlist = localPlaylist ?? _remotePlaylist;
+
+    if (playlist == null && _isLoadingRemote) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        appBar: AppBar(backgroundColor: colorScheme.surface, elevation: 0),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              CircularProgressIndicator(color: accent),
+              const SizedBox(height: 16),
+              Text(
+                'Loading playlist...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (playlist == null) {
       return Scaffold(
         backgroundColor: colorScheme.surface,
         appBar: AppBar(backgroundColor: colorScheme.surface, elevation: 0),
-        body: const Center(child: Text('Playlist not found')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                Icons.music_off_rounded,
+                size: 56,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _remoteError ?? 'Playlist not found',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _checkAndFetchRemote,
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     final songs = playlist.songs;
+    final isAlreadyImported = !isLocal &&
+        controller.playlists.any((p) => p.name == playlist.name);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -45,17 +159,33 @@ class PlaylistDetailScreen extends StatelessWidget {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Rename Playlist',
-            onPressed: () => _showRenameDialog(context, controller, playlist),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Delete Playlist',
-            onPressed: () =>
-                _confirmDeletePlaylist(context, controller, playlist),
-          ),
+          if (isLocal) ...<Widget>[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Rename Playlist',
+              onPressed: () =>
+                  _showRenameDialog(context, controller, playlist),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded),
+              tooltip: 'Delete Playlist',
+              onPressed: () =>
+                  _confirmDeletePlaylist(context, controller, playlist),
+            ),
+          ] else ...<Widget>[
+            IconButton(
+              icon: Icon(
+                isAlreadyImported
+                    ? Icons.bookmark_added_rounded
+                    : Icons.bookmark_add_outlined,
+                color: isAlreadyImported ? accent : null,
+              ),
+              tooltip: isAlreadyImported
+                  ? 'Saved to My Playlists'
+                  : 'Add to My Playlists',
+              onPressed: () => _importPlaylist(context, controller, playlist),
+            ),
+          ],
           const SizedBox(width: 8),
         ],
       ),
@@ -109,6 +239,18 @@ class PlaylistDetailScreen extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
+                  if (playlist.author != null &&
+                      playlist.author!.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(
+                      playlist.author!,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -178,16 +320,39 @@ class PlaylistDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  if (!isLocal) ...<Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: M3EButton(
+                        label: Text(
+                          isAlreadyImported
+                              ? 'Saved to My Playlists'
+                              : 'Add to My Playlists',
+                        ),
+                        icon: Icon(
+                          isAlreadyImported
+                              ? Icons.check_circle_rounded
+                              : Icons.add_rounded,
+                          size: 18,
+                        ),
+                        size: M3EButtonSize.sm,
+                        style: isAlreadyImported
+                            ? M3EButtonStyle.tonal
+                            : M3EButtonStyle.filled,
+                        onPressed: () =>
+                            _importPlaylist(context, controller, playlist),
+                      ),
+                    ),
+                  ],
                   if (songs.isNotEmpty) ...<Widget>[
                     Builder(
                       builder: (context) {
-                        final downloadedCount = controller
-                            .getPlaylistDownloadedCount(songs);
-                        final isFullyDownloaded = controller
-                            .isPlaylistFullyDownloaded(songs);
-                        final isDownloading = controller.isPlaylistDownloading(
-                          songs,
-                        );
+                        final downloadedCount =
+                            controller.getPlaylistDownloadedCount(songs);
+                        final isFullyDownloaded =
+                            controller.isPlaylistFullyDownloaded(songs);
+                        final isDownloading =
+                            controller.isPlaylistDownloading(songs);
                         final remaining = songs.length - downloadedCount;
 
                         return M3EButtonGroup(
@@ -302,97 +467,22 @@ class PlaylistDetailScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    if (controller.isPlaylistDownloading(songs)) ...<Widget>[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(
-                            alpha: 0.7,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: accent,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Downloading offline (${controller.getPlaylistDownloadedCount(songs)} of ${songs.length} saved)',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -0.1,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _confirmCancelBatch(
-                                    context,
-                                    controller,
-                                    controller.getPlaylistDownloadedCount(
-                                      songs,
-                                    ),
-                                    songs.length,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    child: Text(
-                                      'Cancel',
-                                      style: TextStyle(
-                                        color: colorScheme.error,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: songs.isEmpty
-                                    ? 0.0
-                                    : (controller.getPlaylistDownloadedCount(
-                                                songs,
-                                              ) /
-                                              songs.length)
-                                          .clamp(0.0, 1.0),
-                                minHeight: 4,
-                                backgroundColor: colorScheme.surfaceContainer,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  accent,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ],
               ),
             ),
           ),
-          if (songs.isEmpty)
+          if (songs.isEmpty && _isLoadingRemote)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            )
+          else if (songs.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
@@ -413,14 +503,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         'This playlist is empty',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Add songs from Home, Search, or Library using the 3-dot options menu.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -446,34 +528,46 @@ class PlaylistDetailScreen extends StatelessWidget {
                     final song = songs[index];
                     return M3ESongTile(
                       song: song,
-                      trailing: IconButton(
-                        icon: Icon(
-                          Icons.remove_circle_outline_rounded,
-                          size: 20,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        tooltip: 'Remove from playlist',
-                        onPressed: () async {
-                          await controller.removeSongFromPlaylist(
-                            playlist.id,
-                            song.id,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Removed "${song.title}" from "${playlist.name}"',
-                                ),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                      trailing: isLocal
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.remove_circle_outline_rounded,
+                                size: 20,
+                                color: colorScheme.onSurfaceVariant,
                               ),
-                            );
-                          }
-                        },
-                      ),
+                              tooltip: 'Remove from playlist',
+                              onPressed: () async {
+                                await controller.removeSongFromPlaylist(
+                                  playlist.id,
+                                  song.id,
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Removed "${song.title}" from "${playlist.name}"',
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            )
+                          : IconButton(
+                              icon: Icon(
+                                Icons.playlist_add_rounded,
+                                size: 22,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              tooltip: 'Add to custom playlist',
+                              onPressed: () {
+                                AddToPlaylistSheet.show(context, song);
+                              },
+                            ),
                     );
                   },
                 ),
@@ -485,7 +579,26 @@ class PlaylistDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Displays dialog to rename the current playlist.
+  Future<void> _importPlaylist(
+    BuildContext context,
+    MusicPlayerController controller,
+    PlaylistModel playlist,
+  ) async {
+    final imported = await controller.importRemotePlaylist(playlist);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved "${imported?.name ?? playlist.name}" to My Playlists!'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  }
+
   void _showRenameDialog(
     BuildContext context,
     MusicPlayerController controller,
@@ -564,7 +677,6 @@ class PlaylistDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Displays confirmation dialog to delete the playlist entirely.
   void _confirmDeletePlaylist(
     BuildContext context,
     MusicPlayerController controller,
@@ -645,7 +757,6 @@ class PlaylistDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Displays modal options sheet when all playlist tracks are downloaded offline.
   void _showDownloadedOptionsSheet(
     BuildContext context,
     MusicPlayerController controller,
@@ -745,9 +856,8 @@ class PlaylistDetailScreen extends StatelessWidget {
                 ),
                 onTap: () async {
                   Navigator.of(bottomSheetContext).pop();
-                  final List<String> songIds = songs
-                      .map((SongModel s) => s.id)
-                      .toList();
+                  final List<String> songIds =
+                      songs.map((SongModel s) => s.id).toList();
                   await controller.removeDownloadsBatch(songIds);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -772,7 +882,6 @@ class PlaylistDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Displays confirmation dialog to abort ongoing batch download queue.
   void _confirmCancelBatch(
     BuildContext context,
     MusicPlayerController controller,

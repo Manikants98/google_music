@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../models/playlist_model.dart';
 import '../../models/song_model.dart';
 
 /// Lightweight InnerTube client for fast search, discovery, and infinite scroll pagination without API keys.
@@ -220,13 +222,342 @@ class InnerTubeClient {
     final cleaned = query.trim();
     if (cleaned.isEmpty) return <SongModel>[];
 
-    final officialQuery = '$cleaned song';
-    final results = await _postSearch(officialQuery);
-    if (results.isNotEmpty) {
-      return results;
+    final directResults = await _postSearch(cleaned);
+    if (directResults.isNotEmpty) {
+      return directResults;
     }
 
-    return await _postSearch(cleaned);
+    final fallbackQuery = '$cleaned song';
+    return await _postSearch(fallbackQuery);
+  }
+
+  /// Searches for playlists matching [query] using YouTube Music community playlist filter.
+  Future<List<PlaylistModel>> searchPlaylists(String query) async {
+    final cleaned = query.trim();
+    if (cleaned.isEmpty) return <PlaylistModel>[];
+
+    try {
+      final Map<String, dynamic> ytMusicPayload = <String, dynamic>{
+        'context': <String, dynamic>{
+          'client': <String, dynamic>{
+            'clientName': 'WEB_REMIX',
+            'clientVersion': '1.20230522.01.00',
+            'hl': 'en',
+            'gl': 'IN',
+          },
+        },
+        'query': cleaned,
+        'params': 'Eg-KAQwIABAAGAAgACgBMA8%3D',
+      };
+
+      final response = await http
+          .post(
+            Uri.parse(_ytMusicSearchEndpoint),
+            headers: _ytMusicHeaders,
+            body: json.encode(ytMusicPayload),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = json.decode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return _parseYouTubeMusicPlaylists(decoded);
+        }
+      }
+    } catch (e) {
+      debugPrint('[InnerTube] Playlist search failed: $e');
+    }
+    return <PlaylistModel>[];
+  }
+
+  List<PlaylistModel> _parseYouTubeMusicPlaylists(Map<String, dynamic> data) {
+    final List<PlaylistModel> playlists = <PlaylistModel>[];
+    try {
+      final tabs = data['contents']?['tabbedSearchResultsRenderer']?['tabs'];
+      if (tabs is! List || tabs.isEmpty) return playlists;
+      final sections =
+          tabs[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      if (sections is! List) return playlists;
+
+      for (final s in sections) {
+        if (s is! Map<String, dynamic>) continue;
+        final shelf = s['musicShelfRenderer'];
+        if (shelf is! Map<String, dynamic>) continue;
+        final contents = shelf['contents'];
+        if (contents is! List) continue;
+
+        for (final item in contents) {
+          if (item is! Map<String, dynamic>) continue;
+          final renderer = item['musicResponsiveListItemRenderer'];
+          if (renderer is! Map<String, dynamic>) continue;
+
+          final cols = renderer['flexColumns'];
+          if (cols is! List || cols.isEmpty) continue;
+
+          // Title
+          final col0 = cols[0]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+          final title = (col0 is List && col0.isNotEmpty)
+              ? (col0[0]['text'] ?? '').toString()
+              : '';
+          if (title.isEmpty) continue;
+
+          // Subtitle / Author
+          String subtitle = '';
+          if (cols.length > 1) {
+            final col1 = cols[1]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+            if (col1 is List) {
+              subtitle = col1
+                  .map((r) => (r is Map ? r['text'] ?? '' : '').toString())
+                  .where((t) => t.trim().isNotEmpty && t.trim() != '•')
+                  .join(' • ');
+            }
+          }
+
+          // BrowseId
+          String browseId = (renderer['navigationEndpoint']?['browseEndpoint']?['browseId'] ?? '')
+              .toString();
+          if (browseId.isEmpty && col0 is List && col0.isNotEmpty) {
+            browseId = (col0[0]?['navigationEndpoint']?['browseEndpoint']?['browseId'] ?? '')
+                .toString();
+          }
+          if (browseId.isEmpty) continue;
+
+          // Thumbnail
+          String thumb = '';
+          final thumbs =
+              renderer['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+          if (thumbs is List && thumbs.isNotEmpty) {
+            thumb = (thumbs.last['url'] ?? '').toString();
+          }
+
+          playlists.add(
+            PlaylistModel(
+              id: browseId,
+              name: title,
+              author: subtitle.isNotEmpty ? subtitle : null,
+              customThumbnailUrl: thumb.isNotEmpty ? thumb : null,
+              createdAt: DateTime.now(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[InnerTube] Error parsing playlists: $e');
+    }
+    return playlists;
+  }
+
+  /// Fetches playlist details and tracks by YouTube Music [browseId].
+  Future<PlaylistModel?> getPlaylistDetails(String browseId) async {
+    final effectiveBrowseId =
+        browseId.startsWith('VL') ? browseId : 'VL$browseId';
+    try {
+      final Map<String, dynamic> payload = <String, dynamic>{
+        'context': <String, dynamic>{
+          'client': <String, dynamic>{
+            'clientName': 'WEB_REMIX',
+            'clientVersion': '1.20230522.01.00',
+            'hl': 'en',
+            'gl': 'IN',
+          },
+        },
+        'browseId': effectiveBrowseId,
+      };
+
+      final response = await http
+          .post(
+            Uri.parse('https://music.youtube.com/youtubei/v1/browse'),
+            headers: _ytMusicHeaders,
+            body: json.encode(payload),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = json.decode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return _parsePlaylistBrowse(effectiveBrowseId, decoded);
+        }
+      }
+    } catch (e) {
+      debugPrint('[InnerTube] Fetch playlist details error: $e');
+    }
+    return null;
+  }
+
+  PlaylistModel? _parsePlaylistBrowse(
+    String browseId,
+    Map<String, dynamic> data,
+  ) {
+    try {
+      String pName = 'Playlist';
+      String pThumb = '';
+      String pAuthor = '';
+
+      final contents = data['contents'];
+      if (contents is! Map<String, dynamic>) return null;
+
+      final twoCol = contents['twoColumnBrowseResultsRenderer'];
+      final singleCol = contents['singleColumnBrowseResultsRenderer'];
+
+      final List<Map<String, dynamic>> shelves = <Map<String, dynamic>>[];
+
+      if (twoCol is Map<String, dynamic>) {
+        final sec =
+            twoCol['secondaryContents']?['sectionListRenderer']?['contents'];
+        if (sec is List) {
+          for (final s in sec) {
+            if (s is Map<String, dynamic> &&
+                s['musicPlaylistShelfRenderer'] is Map<String, dynamic>) {
+              shelves.add(s['musicPlaylistShelfRenderer']);
+            }
+          }
+        }
+        final tabContent =
+            twoCol['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+        if (tabContent is List && tabContent.isNotEmpty) {
+          for (final h in tabContent) {
+            if (h is! Map<String, dynamic>) continue;
+            final head = h['musicResponsiveHeaderRenderer'] ??
+                h['musicDetailHeaderRenderer'];
+            if (head is Map<String, dynamic>) {
+              final titleRuns = head['title']?['runs'];
+              if (titleRuns is List && titleRuns.isNotEmpty) {
+                pName = (titleRuns[0]['text'] ?? pName).toString();
+              }
+              final thumbs = head['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+              if (thumbs is List && thumbs.isNotEmpty) {
+                pThumb = (thumbs.last['url'] ?? '').toString();
+              }
+              final subRuns = head['subtitle']?['runs'];
+              if (subRuns is List) {
+                pAuthor = subRuns
+                    .map((r) => (r is Map ? r['text'] ?? '' : '').toString())
+                    .where((t) => t.trim().isNotEmpty && t.trim() != '•')
+                    .join(' • ');
+              }
+              break;
+            }
+          }
+        }
+      } else if (singleCol is Map<String, dynamic>) {
+        final sec = singleCol['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+        if (sec is List) {
+          for (final s in sec) {
+            if (s is Map<String, dynamic> &&
+                s['musicPlaylistShelfRenderer'] is Map<String, dynamic>) {
+              shelves.add(s['musicPlaylistShelfRenderer']);
+            }
+          }
+        }
+        final header = data['header'];
+        if (header is Map<String, dynamic>) {
+          final head = header['musicResponsiveHeaderRenderer'] ??
+              header['musicDetailHeaderRenderer'];
+          if (head is Map<String, dynamic>) {
+            final titleRuns = head['title']?['runs'];
+            if (titleRuns is List && titleRuns.isNotEmpty) {
+              pName = (titleRuns[0]['text'] ?? pName).toString();
+            }
+            final thumbs = head['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+            if (thumbs is List && thumbs.isNotEmpty) {
+              pThumb = (thumbs.last['url'] ?? '').toString();
+            }
+            final subRuns = head['subtitle']?['runs'];
+            if (subRuns is List) {
+              pAuthor = subRuns
+                  .map((r) => (r is Map ? r['text'] ?? '' : '').toString())
+                  .where((t) => t.trim().isNotEmpty && t.trim() != '•')
+                  .join(' • ');
+            }
+          }
+        }
+      }
+
+      final List<SongModel> songs = <SongModel>[];
+      final Set<String> seenIds = <String>{};
+
+      for (final shelf in shelves) {
+        final items = shelf['contents'];
+        if (items is! List) continue;
+
+        for (final item in items) {
+          if (item is! Map<String, dynamic>) continue;
+          final r = item['musicResponsiveListItemRenderer'];
+          if (r is! Map<String, dynamic>) continue;
+
+          final cols = r['flexColumns'];
+          if (cols is! List || cols.isEmpty) continue;
+
+          // VideoId
+          String vid = (r['playlistItemData']?['videoId'] ?? '').toString();
+          if (vid.isEmpty) {
+            final overlay = r['overlay']?['musicItemThumbnailOverlayRenderer']?['content']?['musicPlayButtonRenderer']?['playNavigationEndpoint']?['watchEndpoint'];
+            if (overlay is Map<String, dynamic>) {
+              vid = (overlay['videoId'] ?? '').toString();
+            }
+          }
+          if (vid.isEmpty || seenIds.contains(vid)) continue;
+
+          // Title
+          final col0 = cols[0]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+          final songTitle = (col0 is List && col0.isNotEmpty)
+              ? (col0[0]['text'] ?? '').toString()
+              : '';
+          if (songTitle.isEmpty) continue;
+
+          // Artist
+          String songArtist = 'Unknown Artist';
+          if (cols.length > 1) {
+            final col1 = cols[1]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+            if (col1 is List && col1.isNotEmpty) {
+              songArtist = (col1[0]['text'] ?? songArtist).toString();
+            }
+          }
+
+          // Duration
+          String songDur = '--:--';
+          if (cols.length >= 3) {
+            final col2 = cols[2]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+            if (col2 is List && col2.isNotEmpty) {
+              final val = (col2[0]['text'] ?? '').toString();
+              if (val.contains(':')) {
+                songDur = val;
+              }
+            }
+          }
+
+          // Thumbnail
+          String songThumb = pThumb;
+          final thumbs = r['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+          if (thumbs is List && thumbs.isNotEmpty) {
+            songThumb = (thumbs.last['url'] ?? songThumb).toString();
+          }
+
+          songs.add(
+            SongModel(
+              id: vid,
+              title: songTitle,
+              artist: songArtist,
+              duration: songDur,
+              thumbnailUrl: songThumb,
+            ),
+          );
+          seenIds.add(vid);
+        }
+      }
+
+      return PlaylistModel(
+        id: browseId,
+        name: pName,
+        author: pAuthor.isNotEmpty ? pAuthor : null,
+        customThumbnailUrl: pThumb.isNotEmpty ? pThumb : null,
+        createdAt: DateTime.now(),
+        songs: songs,
+      );
+    } catch (e) {
+      debugPrint('[InnerTube] Error parsing browse playlist: $e');
+      return null;
+    }
   }
 
   /// Returns the query string for a specific language and pagination index.
