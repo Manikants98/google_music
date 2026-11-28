@@ -130,13 +130,21 @@ fi
 # ------------------------------------------------------------------------------
 # STEP 3: ANDROID RELEASE APK BUILD
 # ------------------------------------------------------------------------------
+RELEASE_TAG="v${VERSION_NAME}"
+RELEASE_DIR="releases/${RELEASE_TAG}"
+mkdir -p "$RELEASE_DIR"
+
+APK_OUTPUT="${RELEASE_DIR}/google_music.apk"
+DMG_OUTPUT="${RELEASE_DIR}/google_music.dmg"
+
 echo -e "${YELLOW}${BOLD}🤖 [3/4] Building Android Release APK...${RESET}"
 flutter build apk --release
 
 if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-  cp build/app/outputs/flutter-apk/app-release.apk ./google_music.apk
-  APK_SIZE=$(ls -lh ./google_music.apk | awk '{print $5}')
-  echo -e "${GREEN}✓ Android APK built successfully: ${BOLD}google_music.apk${RESET} (${APK_SIZE})\n"
+  cp build/app/outputs/flutter-apk/app-release.apk "$APK_OUTPUT"
+  rm -f ./google_music.apk
+  APK_SIZE=$(ls -lh "$APK_OUTPUT" | awk '{print $5}')
+  echo -e "${GREEN}✓ Android APK built successfully: ${BOLD}${APK_OUTPUT}${RESET} (${APK_SIZE})\n"
 else
   echo -e "${RED}❌ Android build failed to produce APK output.${RESET}"
   exit 1
@@ -150,10 +158,10 @@ flutter build macos --release
 
 MACOS_APP_PATH="build/macos/Build/Products/Release/Google Music.app"
 if [ -d "$MACOS_APP_PATH" ]; then
-  rm -f ./google_music.dmg
-  hdiutil create -volname "Google Music" -srcfolder "$MACOS_APP_PATH" -ov -format UDZO ./google_music.dmg > /dev/null
-  DMG_SIZE=$(ls -lh ./google_music.dmg | awk '{print $5}')
-  echo -e "${GREEN}✓ macOS DMG packaged successfully: ${BOLD}google_music.dmg${RESET} (${DMG_SIZE})\n"
+  rm -f "$DMG_OUTPUT" ./google_music.dmg
+  hdiutil create -volname "Google Music" -srcfolder "$MACOS_APP_PATH" -ov -format UDZO "$DMG_OUTPUT" > /dev/null
+  DMG_SIZE=$(ls -lh "$DMG_OUTPUT" | awk '{print $5}')
+  echo -e "${GREEN}✓ macOS DMG packaged successfully: ${BOLD}${DMG_OUTPUT}${RESET} (${DMG_SIZE})\n"
 else
   echo -e "${RED}❌ macOS build failed to produce .app bundle.${RESET}"
   exit 1
@@ -174,15 +182,16 @@ echo "================================================================="
 echo -e "${RESET}"
 
 echo -e "${BOLD}Target Version :${RESET} ${CYAN}${VERSION_NAME} (Build ${BUILD_NUMBER})${RESET}"
+echo -e "${BOLD}Release Folder :${RESET} ${CYAN}${RELEASE_DIR}/${RESET}"
 echo -e "${BOLD}Git Branch     :${RESET} ${CYAN}$(git branch --show-current)${RESET}"
 echo ""
 echo -e "${BOLD}Generated Artifacts:${RESET}"
-echo -e "  📦 Android APK : ${BOLD}./google_music.apk${RESET} (${APK_SIZE})"
-echo -e "  💿 macOS DMG   : ${BOLD}./google_music.dmg${RESET} (${DMG_SIZE})"
+echo -e "  📦 Android APK : ${BOLD}${APK_OUTPUT}${RESET} (${APK_SIZE})"
+echo -e "  💿 macOS DMG   : ${BOLD}${DMG_OUTPUT}${RESET} (${DMG_SIZE})"
 echo ""
 
 # Quick GitHub release tip
 echo -e "${DIM}To publish this release on GitHub, run:${RESET}"
 echo -e "${CYAN}git add . && git commit -m \"chore(release): bump to ${FULL_VERSION}\" && git push origin beta${RESET}"
-echo -e "${CYAN}gh release create v${VERSION_NAME} google_music.apk google_music.dmg --title \"v${VERSION_NAME}\" --prerelease${RESET}"
+echo -e "${CYAN}gh release create ${RELEASE_TAG} ${APK_OUTPUT} ${DMG_OUTPUT} --title \"${RELEASE_TAG}\" --prerelease${RESET}"
 echo "================================================================="
