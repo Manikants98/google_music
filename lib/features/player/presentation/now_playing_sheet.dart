@@ -71,20 +71,27 @@ class NowPlayingSheet extends StatelessWidget {
         children: <Widget>[
           // 🌊 Player Background: Apple Music Liquid Mesh Canvas vs Classic Gradient
           if (controller.isLiquidMeshEnabled)
-            LiquidMeshBackground(
-              primaryColor: accent,
-              paletteColors: controller.dynamicPaletteColors,
-              isPlaying: controller.status == PlayerStatus.playing,
-              isDark: isDark,
+            Positioned.fill(
+              child: LiquidMeshBackground(
+                primaryColor: accent,
+                paletteColors: controller.dynamicPaletteColors,
+                isPlaying: controller.status == PlayerStatus.playing,
+                isDark: isDark,
+              ),
             )
           else
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 600),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: controller.getDynamicGradient(isDark),
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+            Positioned.fill(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                color: theme.scaffoldBackgroundColor,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: controller.getDynamicGradient(isDark),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
                 ),
               ),
             ),
