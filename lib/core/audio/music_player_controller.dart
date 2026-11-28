@@ -192,6 +192,9 @@ class MusicPlayerController extends ChangeNotifier {
   /// Whether autoplay continuous recommendation is enabled.
   bool _isAutoplayEnabled = true;
 
+  /// Whether fluid animated liquid mesh background is enabled in Now Playing.
+  bool _isLiquidMeshEnabled = true;
+
   /// Whether developer beta mode is unlocked via 5-tap gesture.
   bool _isDeveloperModeEnabled = false;
 
@@ -431,6 +434,18 @@ class MusicPlayerController extends ChangeNotifier {
   void setAutoplayEnabled(bool enabled) {
     if (_isAutoplayEnabled != enabled) {
       _isAutoplayEnabled = enabled;
+      unawaited(_persistSettings());
+      notifyListeners();
+    }
+  }
+
+  /// Whether fluid animated liquid mesh background is enabled in Now Playing.
+  bool get isLiquidMeshEnabled => _isLiquidMeshEnabled;
+
+  /// Sets animated liquid mesh background state and persists choice.
+  void setLiquidMeshEnabled(bool enabled) {
+    if (_isLiquidMeshEnabled != enabled) {
+      _isLiquidMeshEnabled = enabled;
       unawaited(_persistSettings());
       notifyListeners();
     }
@@ -1822,6 +1837,10 @@ class MusicPlayerController extends ChangeNotifier {
         if (autoplay != null) {
           _isAutoplayEnabled = autoplay;
         }
+        final liquidMesh = decoded['isLiquidMeshEnabled'] as bool?;
+        if (liquidMesh != null) {
+          _isLiquidMeshEnabled = liquidMesh;
+        }
         final devMode = decoded['isDeveloperModeEnabled'] as bool?;
         if (devMode != null) {
           _isDeveloperModeEnabled = devMode;
@@ -1853,6 +1872,7 @@ class MusicPlayerController extends ChangeNotifier {
     final data = <String, Object>{
       'themeMode': _themeMode.name,
       'isAutoplayEnabled': _isAutoplayEnabled,
+      'isLiquidMeshEnabled': _isLiquidMeshEnabled,
       'isDeveloperModeEnabled': _isDeveloperModeEnabled,
       'isBetaChannelEnabled': _isBetaChannelEnabled,
       if (_currentSong != null) ...<String, Object>{

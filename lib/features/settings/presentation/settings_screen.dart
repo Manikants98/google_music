@@ -246,6 +246,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              _SettingsItem(
+                icon: Icons.waves_rounded,
+                title: 'Fluid Animated Background',
+                subtitle: 'Apple Music style flowing liquid mesh in Now Playing',
+                trailing: Switch(
+                  value: controller.isLiquidMeshEnabled,
+                  activeThumbColor: accent,
+                  onChanged: (bool value) =>
+                      controller.setLiquidMeshEnabled(value),
+                ),
+              ),
             ],
           ),
           _buildSettingsGroup(
