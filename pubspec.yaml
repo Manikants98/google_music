@@ -42,6 +42,7 @@ dependencies:
   palette_generator: ^0.3.3+7
   animations: ^3.0.0
   just_audio: ^0.10.6
+  just_audio_platform_interface: ^4.6.0
   audio_service: ^0.18.19
   youtube_explode_dart: ^3.1.0
   http: ^1.6.0

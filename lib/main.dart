@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'core/audio/audio_route_service.dart';
 import 'core/audio/music_audio_handler.dart';
 import 'core/audio/music_player_controller.dart';
+import 'core/audio/tracked_just_audio_platform.dart';
 import 'core/offline/download_notification_service.dart';
 import 'core/offline/offline_download_service.dart';
 import 'core/playlist/playlist_service.dart';
@@ -51,6 +52,8 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 /// Entry point for Google Music Flutter application.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await TrackedJustAudioPlatform.install();
 
   final session = await AudioSession.instance;
   try {

@@ -87,6 +87,10 @@ import UserNotifications
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5"
         result(version)
 
+      case "stopAllAudio":
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        result(true)
+
       default:
         result(FlutterMethodNotImplemented)
       }
