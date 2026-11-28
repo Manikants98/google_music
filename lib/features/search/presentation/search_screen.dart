@@ -208,6 +208,7 @@ class _SearchScreenState extends State<SearchScreen> {
       (c) => c.recentSearches,
     );
     final isDesktop = MediaQuery.sizeOf(context).width > 850;
+    final hPad = isDesktop ? 24.0 : 12.0;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -216,12 +217,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: <Widget>[
             // Search Input Field
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                isDesktop ? 24 : 12,
-                12,
-                isDesktop ? 24 : 12,
-                8,
-              ),
+              padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
@@ -292,33 +288,54 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
 
-            // Filter Tabs (All / Songs / Playlists)
+            // Top Filter Chips (using standard M3EChip to match Home & Library)
             if (_hasSearched || _searchCtrl.text.isNotEmpty)
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isDesktop ? 24 : 12,
-                  2,
-                  isDesktop ? 24 : 12,
-                  8,
-                ),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: SizedBox(
-                  height: 36,
-                  child: Row(
+                  height: 38,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: hPad),
                     children: <Widget>[
-                      _buildFilterChip('All', SearchTab.all, accent, colorScheme),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Songs (${_searchResults.length})',
-                        SearchTab.songs,
-                        accent,
-                        colorScheme,
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: M3EChip(
+                          label: 'All',
+                          type: M3EChipType.filter,
+                          selected: _selectedTab == SearchTab.all,
+                          onPressed: () {
+                            setState(() {
+                              _selectedTab = SearchTab.all;
+                            });
+                          },
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Playlists (${_playlistResults.length})',
-                        SearchTab.playlists,
-                        accent,
-                        colorScheme,
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: M3EChip(
+                          label: 'Songs',
+                          type: M3EChipType.filter,
+                          selected: _selectedTab == SearchTab.songs,
+                          onPressed: () {
+                            setState(() {
+                              _selectedTab = SearchTab.songs;
+                            });
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: M3EChip(
+                          label: 'Playlists',
+                          type: M3EChipType.filter,
+                          selected: _selectedTab == SearchTab.playlists,
+                          onPressed: () {
+                            setState(() {
+                              _selectedTab = SearchTab.playlists;
+                            });
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -328,60 +345,27 @@ class _SearchScreenState extends State<SearchScreen> {
             // Main Content Area
             Expanded(
               child: _isSearching
-                  ? const SearchScreenSkeleton()
+                  ? SearchScreenSkeleton(horizontalPadding: hPad)
                   : _hasSearched
-                      ? _buildSearchResults(context, theme, colorScheme, accent, isDesktop)
+                      ? _buildSearchResults(
+                          context,
+                          theme,
+                          colorScheme,
+                          accent,
+                          hPad,
+                          isDesktop,
+                        )
                       : _buildDefaultDiscovery(
                           context,
                           theme,
                           colorScheme,
                           accent,
                           recentSearches,
+                          hPad,
                           isDesktop,
                         ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(
-    String label,
-    SearchTab tab,
-    Color accent,
-    M3EColorScheme colorScheme,
-  ) {
-    final isSelected = _selectedTab == tab;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTab = tab;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? accent : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? accent
-                : colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
-            width: 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected
-                  ? (accent.computeLuminance() > 0.5 ? Colors.black : Colors.white)
-                  : colorScheme.onSurface,
-              fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
         ),
       ),
     );
@@ -392,6 +376,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ThemeData theme,
     M3EColorScheme colorScheme,
     Color accent,
+    double hPad,
     bool isDesktop,
   ) {
     final hasNoResults = _searchResults.isEmpty && _playlistResults.isEmpty;
@@ -427,19 +412,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     switch (_selectedTab) {
       case SearchTab.songs:
-        return _buildSongsList(context, colorScheme, isDesktop);
+        return _buildSongsList(context, colorScheme, hPad);
 
       case SearchTab.playlists:
-        return _buildPlaylistsGrid(context, theme, colorScheme, isDesktop);
+        return _buildPlaylistsGrid(context, theme, colorScheme, hPad, isDesktop);
 
       case SearchTab.all:
         return ListView(
-          padding: EdgeInsets.fromLTRB(
-            isDesktop ? 24 : 12,
-            0,
-            isDesktop ? 24 : 12,
-            120,
-          ),
+          padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120),
           children: <Widget>[
             // Top Songs Section
             if (_searchResults.isNotEmpty) ...<Widget>[
@@ -575,7 +555,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSongsList(
     BuildContext context,
     M3EColorScheme colorScheme,
-    bool isDesktop,
+    double hPad,
   ) {
     if (_searchResults.isEmpty) {
       return Center(
@@ -587,12 +567,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        isDesktop ? 24 : 12,
-        0,
-        isDesktop ? 24 : 12,
-        120,
-      ),
+      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120),
       children: <Widget>[
         M3EList(
           color: colorScheme.surfaceContainerHighest,
@@ -615,6 +590,7 @@ class _SearchScreenState extends State<SearchScreen> {
     BuildContext context,
     ThemeData theme,
     M3EColorScheme colorScheme,
+    double hPad,
     bool isDesktop,
   ) {
     if (_playlistResults.isEmpty) {
@@ -627,12 +603,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(
-        isDesktop ? 24 : 12,
-        8,
-        isDesktop ? 24 : 12,
-        120,
-      ),
+      padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 120),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isDesktop ? 4 : 2,
         mainAxisSpacing: 12,
@@ -733,6 +704,7 @@ class _SearchScreenState extends State<SearchScreen> {
     M3EColorScheme colorScheme,
     Color accent,
     List<SongModel> recentSearches,
+    double hPad,
     bool isDesktop,
   ) {
     final controller = context.read<MusicPlayerController>();
@@ -743,12 +715,7 @@ class _SearchScreenState extends State<SearchScreen> {
         if (recentSearches.isNotEmpty) ...<Widget>[
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isDesktop ? 24 : 12,
-                8,
-                isDesktop ? 24 : 12,
-                8,
-              ),
+              padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -777,7 +744,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 12),
+            padding: EdgeInsets.symmetric(horizontal: hPad),
             sliver: SliverToBoxAdapter(
               child: M3EList(
                 color: colorScheme.surfaceContainerHighest,
@@ -808,12 +775,7 @@ class _SearchScreenState extends State<SearchScreen> {
         // Browse By Language Section
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              isDesktop ? 24 : 12,
-              8,
-              isDesktop ? 24 : 12,
-              12,
-            ),
+            padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 12),
             child: Text(
               'Browse by language',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -823,9 +785,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         SliverPadding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? 24 : 12,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: hPad),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: isDesktop ? 4 : 2,
